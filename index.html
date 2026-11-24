@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyTorch 基础 · 双语学习打卡</title>
+<style>
+:root{--bg:#f8fafc;--card:#ffffff;--ink:#1e293b;--mut:#64748b;--line:#e2e8f0;--acc:#ea580c;--acc2:#ffedd5;--sb:#1c1917;--sb2:#292524;--code:#1c1917;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65}
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--sb);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+#burger{background:none;border:1px solid #57534e;color:#fff;font-size:18px;width:38px;height:34px;border-radius:8px;cursor:pointer}
+#topbar h1{font-size:17px;font-weight:600;letter-spacing:.5px}
+#topbar .spacer{flex:1}
+#userbox{display:flex;align-items:center;gap:8px;font-size:14px}
+#userbox select{padding:4px 8px;border-radius:8px;border:1px solid #57534e;background:#292524;color:#fff;font-size:13px;max-width:140px}
+#userbox button{padding:4px 10px;border-radius:8px;border:1px solid #57534e;background:#292524;color:#fff;cursor:pointer;font-size:13px}
+#layout{display:flex;padding-top:56px;min-height:100vh}
+#sidebar{width:280px;background:var(--sb);color:#d6d3d1;position:fixed;top:56px;bottom:0;left:0;overflow-y:auto;transition:transform .25s ease;z-index:40;padding:14px 10px}
+#layout.hide #sidebar{transform:translateX(-100%)}
+#layout.hide main{margin-left:0}
+main{margin-left:280px;padding:28px 34px 80px;max-width:900px;transition:margin-left .25s ease;flex:1}
+.navlink{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:9px 12px;border-radius:10px;color:#d6d3d1;text-decoration:none;font-size:14px;margin:2px 0}
+.navlink:hover{background:#292524;color:#fff}
+.navlink.active{background:#292524;color:#fff;border-left:3px solid var(--acc)}
+.badge{font-size:11px;background:#44403c;color:#e7e5e4;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.badge.done{background:var(--acc);color:#fff}
+#sidefoot{margin-top:16px;padding:12px;border-top:1px solid #292524;font-size:12px}
+#sidefoot .bar{margin:8px 0}
+.bar{height:8px;background:#44403c;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.mini{color:#78716c;font-size:12px}
+#sidefoot .btns{display:flex;gap:6px;margin-top:8px}
+#sidefoot .btns button{flex:1;padding:5px 4px;font-size:12px;border-radius:8px;border:1px solid #44403c;background:#292524;color:#d6d3d1;cursor:pointer}
+section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:26px;scroll-margin-top:70px;box-shadow:0 1px 3px rgba(28,25,23,.05)}
+.chhead{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:14px;margin-bottom:16px}
+.chhead h2{font-size:20px}
+.chhead .sub{color:var(--mut);font-size:13px}
+.bigwrap{margin-left:auto;text-align:right}
+.block{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0;background:#fff}
+.blockhead{display:flex;align-items:flex-start;gap:10px}
+.blockhead h3{font-size:15px;flex:1;font-weight:600}
+.ck{flex-shrink:0;width:26px;height:26px;border-radius:8px;border:2px solid #cbd5e1;background:#fff;cursor:pointer;font-size:15px;line-height:1;color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
+.ck:hover{border-color:var(--acc)}
+.ck.on{background:var(--acc);border-color:var(--acc)}
+.ck.on:after{content:"✓"}
+.ck.big{width:34px;height:34px;font-size:19px;border-radius:10px}
+.when{font-size:11px;color:var(--mut);margin-top:2px}
+.itembody{margin-top:8px;font-size:14px}
+.itembody p{margin:6px 0}
+.itembody ul,.itembody ol{margin:6px 0 6px 20px}
+code{background:#f5f5f4;padding:1px 6px;border-radius:6px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+pre{background:var(--code);color:#e7e5e4;padding:14px 16px;border-radius:12px;overflow-x:auto;margin:10px 0;font-size:13px;line-height:1.55}
+pre code{background:none;padding:0;color:inherit}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:#f5f5f4}
+details{border:1px dashed #cbd5e1;border-radius:10px;padding:8px 12px;margin:8px 0;background:#fafaf9}
+summary{cursor:pointer;font-size:13px;color:var(--acc);font-weight:600}
+.exq{font-size:14px}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--acc2);color:#7c2d12;margin-right:6px}
+#modal{position:fixed;inset:0;background:rgba(28,25,23,.55);display:none;align-items:center;justify-content:center;z-index:100}
+#modal.show{display:flex}
+#modal .card{background:#fff;border-radius:16px;padding:28px;width:min(90vw,360px);text-align:center}
+#modal input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:15px;margin:14px 0}
+#modal button{padding:8px 18px;border:none;border-radius:10px;background:var(--acc);color:#fff;font-size:14px;cursor:pointer;margin:0 4px}
+#modal button.ghost{background:#e7e5e4;color:var(--ink)}
+#foot{color:var(--mut);font-size:12px;text-align:center;margin-top:30px}
+@media(max-width:900px){
+ main{margin-left:0!important;padding:20px 16px 60px}
+ #sidebar{box-shadow:4px 0 16px rgba(0,0,0,.35)}
+}
+</style>
+</head>
+<body>
+<header id="topbar">
+ <button id="burger" title="收起/展开目录 / toggle sidebar">☰</button>
+ <h1>PyTorch 基础 · 双语学习打卡 Learn PyTorch Basics</h1>
+ <div class="spacer"></div>
+ <div id="userbox">
+  <span id="uname" style="opacity:.85"></span>
+  <select id="usel"></select>
+  <button id="uadd">+ 用户</button>
+ </div>
+</header>
+<div id="layout">
+ <nav id="sidebar">
+  <div id="navlist"></div>
+  <div id="sidefoot">
+   <div>总进度 Overall <span class="badge" data-badge="ALL">0/0</span></div>
+   <div class="bar" data-bar="ALL"><i></i></div>
+   <div class="mini">数据保存在本浏览器 localStorage，按用户分开存储。<br>Progress is stored per user in this browser.</div>
+   <div class="btns">
+    <button id="exp">导出备份 Export</button>
+    <button id="imp">导入 Import</button>
+    <input type="file" id="impfile" accept=".json" style="display:none">
+   </div>
+  </div>
+ </nav>
+ <main id="main"></main>
+</div>
+<div id="modal"><div class="card">
+ <h2 style="font-size:18px">欢迎 / Welcome</h2>
+ <p style="font-size:13px;color:#78716c;margin-top:6px">输入你的名字开始打卡，每位用户的进度分开保存。<br>Enter your name; each user's progress is saved separately.</p>
+ <input id="mname" placeholder="你的名字 / your name">
+ <button id="mok">开始 Start</button>
+ <button id="mcancel" class="ghost" style="display:none">取消 Cancel</button>
+</div></div>
+<div id="foot">PyTorch「Learn the Basics」双语学习页 · 官方教程 docs.pytorch.org/tutorials/beginner/basics/intro.html · 配套代码在仓库 code/ 目录</div>
+<script>
+const KEY="pytorch_basics_notes_v1";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{users:{},current:null}}catch(e){return{users:{},current:null}}}
+let S=load();
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function today(){const d=new Date();return d.toISOString().slice(0,10)}
+
+/* ============ 内容数据 CONTENT DATA ============ */
+const CH=[
+{num:"第0章",id:"ch0",title:"准备环境 Setup",big:"环境就绪 · Ready to run",blocks:[
+ {id:"ch0-k1",t:"检查安装与加速器 Check your install & accelerator",h:`
+  <p><i>Most machine learning workflows involve working with data, creating models, optimizing model parameters, and saving the trained models.</i>（官方把 ML 工作流概括为：处理数据 → 建模型 → 优化参数 → 保存模型。本站每一章对应其中一环。）先确认 PyTorch 已装好、能找到加速器（accelerator：GPU / Apple MPS 等硬件）。</p>
+  <pre><code>import torch
+print(torch.__version__)            # 2.15.0
+# macOS Apple Silicon 的加速器是 MPS (Metal Performance Shaders)
+dev = "mps" if torch.backends.mps.is_available() else "cpu"
+print(dev)                           # mps</code></pre>
+  <p>配套脚本：<code>code/00_setup.py</code>。运行（本项目已配好 .venv）：<br><code>cd /Users/mzh24/agent/ali/cs50/pytorch-basics</code> 然后 <code>.venv/bin/python code/00_setup.py</code></p>`},
+ {id:"ch0-k2",t:"张量搬上/搬下加速器 Moving tensors to a device",h:`
+  <p><i>By default, tensors are created on the CPU. We need to explicitly move tensors to the accelerator using .to method.</i>（张量默认建在 CPU 上，要用 <code>.to()</code> 显式搬到加速器。）</p>
+  <pre><code>device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+x = torch.ones(3)
+x = x.to(device)        # 搬到 mps
+print(x.device)         # mps:0
+y = x.cpu()             # 搬回 CPU（要转 numpy 时必须先回 CPU）
+print(y.device)         # cpu</code></pre>
+  <p><i>Keep in mind that copying large tensors across devices can be expensive in terms of time and memory!</i>（跨设备拷贝大张量的时间和内存开销都不小，别把整个数据集来回搬。）</p>`},
+ {id:"ch0-k3",t:"两种跑代码的方式 Cloud or local",h:`
+  <p><i>You can run this tutorial in a couple of ways: In the cloud (Google Colab)... Locally: set up PyTorch first on your local machine.</i></p>
+  <ul><li><b>云：</b>官方教程每页顶部有「Run in Google Colab」，免安装，适合没配好环境时。</li>
+  <li><b>本机：</b>你已有 <code>.venv</code>（torch 2.15.0 + torchvision 0.29.2 + numpy）。统一入口：<code>.venv/bin/python code/章节号_名称.py</code></li></ul>
+  <p>每章的示例和习题答案都已写成脚本放在 <code>code/</code> 目录，先自己写，再对照运行。</p>`}],
+ex:[
+ {id:"ch0-e1",q:"打印 torch 版本和当前可用的加速器。Print torch.__version__ and the best available device.",a:"<pre><code>import torch\nprint(torch.__version__)\nprint(\"mps\" if torch.backends.mps.is_available() else \"cpu\")\n# 本机期望输出：2.15.0 / mps</code></pre><p>要点：Apple Silicon 上检测 MPS 的官方入口是 <code>torch.backends.mps.is_available()</code>；NVIDIA 显卡则用 <code>torch.cuda.is_available()</code>。</p>"},
+ {id:"ch0-e2",q:"创建 (2,2) 全 1 张量 → 搬到 mps → 乘 2 → 搬回 cpu → 转 numpy。Round-trip: create on CPU, move to mps, multiply by 2, move back, convert to numpy.",a:"<pre><code>import torch\nx = torch.ones(2, 2).to(\"mps\")\nx = x * 2\nn = x.cpu().numpy()\nprint(n)      # [[2. 2.],[2. 2.]]</code></pre><p>要点：numpy 只能接收 CPU 张量，所以转 numpy 前必须 <code>.cpu()</code>。</p>"}]},
+
+{num:"第1章",id:"ch1",title:"Tensors 张量",big:"张量基本功 · Tensor fundamentals",blocks:[
+ {id:"ch1-k1",t:"什么是张量 What is a tensor",h:`
+  <p><i>Tensors are a specialized data structure that are very similar to arrays and matrices. In PyTorch, we use tensors to encode the inputs and outputs of a model, as well as the model's parameters.</i>（张量 = 多维数组。PyTorch 里一切皆张量：模型输入、输出、参数全是张量。）</p>
+  <p><i>Tensors are similar to NumPy's ndarrays, except that tensors can run on GPUs or other hardware accelerators.</i>（和 numpy 数组 API 几乎一样，但能上 GPU/MPS，而且为自动求导做了优化——第5章会用到。）</p>
+  <table><tr><th>维度 Rank</th><th>名字</th><th>例子</th></tr>
+  <tr><td>0</td><td>标量 scalar</td><td><code>torch.tensor(3.14)</code></td></tr>
+  <tr><td>1</td><td>向量 vector</td><td><code>torch.tensor([1.,2.,3.])</code>（一个样本的特征）</td></tr>
+  <tr><td>2</td><td>矩阵 matrix</td><td><code>torch.rand(64, 784)</code>（一批展平的图像）</td></tr>
+  <tr><td>4</td><td>图像批次 batch</td><td><code>[64, 1, 28, 28]</code>（批大小×通道×高×宽）</td></tr></table>`},
+ {id:"ch1-k2",t:"创建张量的四种方式 Initializing a Tensor",h:`
+  <p>官方给了四种创建方式（<i>The data type is automatically inferred</i>——dtype 会自动推断）：</p>
+  <pre><code>import torch, numpy as np
+data = [[1, 2], [3, 4]]
+# 1. 直接从数据 / directly from data
+x_data = torch.tensor(data)
+# 2. 从 numpy / from a NumPy array
+x_np = torch.from_numpy(np.array(data))
+# 3. 从另一个张量：保留形状和类型 / retains properties unless overridden
+x_ones = torch.ones_like(x_data)                  # [1,1;1,1] 整数
+x_rand = torch.rand_like(x_data, dtype=torch.float)  # 随机小数
+# 4. 按形状造 / shape is a tuple of tensor dimensions
+shape = (2, 3)
+rand_tensor = torch.rand(shape)   # 均匀分布 [0,1)
+ones_tensor = torch.ones(shape)
+zeros_tensor = torch.zeros(shape)</code></pre>`},
+ {id:"ch1-k3",t:"三大属性 Attributes: shape / dtype / device",h:`
+  <p><i>Tensor attributes describe their shape, datatype, and the device on which they are stored.</i>（张量的三个最关键属性：形状、数据类型、存在哪个设备上。调试 80% 的报错都是三者不匹配。）</p>
+  <pre><code>t = torch.rand(3, 4)
+print(t.shape)    # torch.Size([3, 4])
+print(t.dtype)    # torch.float32
+print(t.device)   # cpu</code></pre>
+  <p>常见 dtype：<code>float32</code>（默认，深度学习主力）、<code>float64</code>（numpy 默认）、<code>int64</code>（标签 labels）。两个张量运算时 dtype 必须一致，否则报错——<code>float * int</code> 是新手第一大坑。</p>`},
+ {id:"ch1-k4",t:"索引与切片 Indexing & slicing（numpy 风格）",h:`
+  <p><i>If you're familiar with the NumPy API, you'll find the Tensor API a breeze to use.</i>（会 numpy 就会张量索引。）</p>
+  <pre><code>tensor = torch.ones(4, 4)
+tensor[0]         # 第一行 first row
+tensor[:, 0]      # 第一列 first column（: = 全部行）
+tensor[..., -1]   # 最后一列 last column（... 表示"前面所有维度"）
+tensor[:, 1] = 0  # 直接给一列赋值 / assign to a slice
+print(tensor)
+# tensor([[1., 0., 1., 1.],
+#         [1., 0., 1., 1.],
+#         [1., 0., 1., 1.],
+#         [1., 0., 1., 1.]])</code></pre>`},
+ {id:"ch1-k5",t:"拼接 Joining: cat vs stack",h:`
+  <p><i>You can use torch.cat to concatenate a sequence of tensors along a given dimension.</i>（<code>cat</code> 沿已有维度拼接；<code>stack</code> 新增一维堆叠——两者只差一个维度。）</p>
+  <pre><code>a = torch.ones(2, 2)
+torch.cat([a, a], dim=0).shape    # [4, 2]  上下接
+torch.cat([a, a], dim=1).shape    # [2, 4]  左右接
+torch.stack([a, a], dim=0).shape  # [2, 2, 2]  套一层"摞起来"</code></pre>
+  <p>记忆：cat 后维度数不变，stack 后维度数 +1。做 Data Loader 碰到 <code>default_collate</code> 内部就是 stack。</p>`},
+ {id:"ch1-k6",t:"算术运算与 in-place Arithmetic & in-place",h:`
+  <p>两种乘法必须分清：<code>@</code> 是<b>矩阵乘</b> matrix multiplication，<code>*</code> 是<b>逐元素乘</b> element-wise product：</p>
+  <pre><code>y1 = tensor @ tensor.T        # 矩阵乘，.T 是转置 transpose
+y2 = tensor.matmul(tensor.T)  # 等价写法
+z1 = tensor * tensor          # 逐元素乘
+z2 = tensor.mul(tensor)       # 等价写法
+
+agg = tensor.sum()            # 聚合成单元素张量
+agg.item()                    # 单元素张量 -> Python 数值（float）
+tensor.add_(5)                # in-place：原地修改，改变 tensor 本身</code></pre>
+  <p><i>Operations that store the result into the operand are called in-place. They are denoted by a _ suffix.</i>（下划线后缀 = 原地操作。）</p>
+  <p><i>In-place operations save some memory, but can be problematic when computing derivatives because of an immediate loss of history. Hence, their use is discouraged.</i>（官方不鼓励 in-place：省一点内存，但会破坏求导需要的历史记录。）</p>`},
+ {id:"ch1-k7",t:"变形与广播 Reshape & broadcasting",h:`
+  <p>张量变形三板斧（不复制数据，只换"视角"）：</p>
+  <pre><code>t = torch.arange(12)         # [0..11]
+t.view(3, 4)                 # 改形状
+t.view(-1)                   # -1 = 这一维自动推算
+t.reshape(2, 6)              # 类似 view，必要时会复制
+t.unsqueeze(0)               # 加一维 [1,12]
+t.squeeze()                  # 去掉大小为 1 的维</code></pre>
+  <p><b>广播 broadcasting</b>：两个形状不同的张量运算时，从最后一维往前对齐——某维相等或一方为 1（或缺失）即可运算，为 1 的一维自动"复制"：</p>
+  <pre><code>a = torch.ones(3, 4)
+b = torch.tensor([10., 20., 30., 40.])   # (4,)
+(a + b).shape                            # [3, 4]，b 被广播成 3 行
+c = torch.tensor([[1.], [2.], [3.]])     # (3,1)
+(a * c).shape                            # [3, 4]，c 每行乘出 4 份</code></pre>
+  <p>广播让"每个样本减去均值""给每列乘不同权重"这类操作一行搞定，也是最容易出 silent bug 的地方（形状错了但没报错）。动手前先 <code>print(x.shape)</code>。</p>`}],
+ex:[
+ {id:"ch1-e1",q:"从嵌套列表 [[1,2,3],[4,5,6]] 创建张量，打印 shape/dtype/device；再用 zeros_like 创建同形状全 0 张量。Create a tensor from a nested list, print its three attributes, then zeros_like.",a:"<pre><code>import torch\nx = torch.tensor([[1, 2, 3], [4, 5, 6]])\nprint(x.shape, x.dtype, x.device)   # torch.Size([2,3]) torch.int64 cpu\nz = torch.zeros_like(x)\nprint(z)\n# tensor([[0, 0, 0],[0, 0, 0]])</code></pre>"},
+ {id:"ch1-e2",q:"用实验证明 cat 和 stack 的区别：对两个 (2,2) 张量分别做 cat(dim=0)、cat(dim=1)、stack(dim=0)，打印形状并解释。Show cat vs stack with shapes.",a:"<pre><code>import torch\na = torch.ones(2, 2)\nprint(torch.cat([a, a], dim=0).shape)    # [4,2] 行数翻倍\nprint(torch.cat([a, a], dim=1).shape)    # [2,4] 列数翻倍\nprint(torch.stack([a, a], dim=0).shape)  # [2,2,2] 多了一维\"摞\"\n# 解释：cat 沿已有维度拼接，维度数不变；stack 新增一维。</code></pre>"},
+ {id:"ch1-e3",q:"对 4x4 张量 t：算 t @ t.T 与 t * t，解释结果形状为何一个是 [4,4] 一个是 [4,4] 但数值完全不同。Matrix-multiply vs element-wise.",a:"<pre><code>import torch\nt = torch.ones(4, 4)\nt[:, 1] = 0\nprint(t @ t.T)   # 矩阵乘：行点列，结果是 [4,4]\nprint(t * t)     # 逐元素乘：结果里 0 还是 0，1 还是 1\n# t @ t.T 的每行是 [3,3,3,3]（每行 3 个 1 相加点积），t*t 只有 0/1。</code></pre>"},
+ {id:"ch1-e4",q:"切片挑战：对 (5,5) 的 arange 张量，取 (1) 第 2 行 (2) 最后一列 (3) 每隔一行 (4) 左右翻转。Slicing drills.",a:"<pre><code>import torch\nt = torch.arange(25.).reshape(5, 5)\nprint(t[1])         # 第2行\nprint(t[:, -1])     # 最后一列 [4,9,14,19,24]\nprint(t[::2])       # 每隔一行，行 0,2,4\nprint(t[:, ::-1])   # 列倒序 = 左右翻转\n# 提示：t[i, j]，冒号切片和 numpy 完全一致。</code></pre>"},
+ {id:"ch1-e5",q:"广播练习：(3,1) + (1,4) 结果形状？(3,4) + (4,) 呢？(3,4) + (3,) 会发生什么？Predict broadcast shapes.",a:"<pre><code>import torch\nprint((torch.ones(3,1) + torch.ones(1,4)).shape)  # [3,4]\nprint((torch.ones(3,4) + torch.ones(4)).shape)    # [3,4] 缺的前导维自动补 1\ntry:\n    torch.ones(3,4) + torch.ones(3)   # (3,) 无法和最后一维 4 对齐\nexcept RuntimeError as e:\n    print(\"报错：\", str(e)[:60], \"...\")\n# 规则：从最后一维向前对齐，相等或为 1 才行。</code></pre>"},
+ {id:"ch1-e6",q:"验证 numpy 桥共享内存：torch.ones(5) 转 numpy 后对张量 add_(1)，打印 numpy 数组；再用 .clone() 做出独立副本。Shared-memory bridge experiment.",a:"<pre><code>import torch\nt = torch.ones(5)\nn = t.numpy()\nt.add_(1)\nprint(n)   # [2. 2. 2. 2. 2.]  <- numpy 也变了！共享同一块内存\nn2 = t.clone().numpy()   # clone 得到独立副本\nt.add_(1)\nprint(n2)  # 还是 [2. 2. 2. 2. 2.]</code></pre><p><i>Tensors on the CPU and NumPy arrays can share their underlying memory locations, and changing one will change the other.</i></p>"}]},
+
+{num:"第2章",id:"ch2",title:"Dataset 与 DataLoader",big:"数据管道 · Data pipeline",blocks:[
+ {id:"ch2-k1",t:"为什么需要这两个类 Why Dataset & DataLoader",h:`
+  <p><i>Code for processing data samples can get messy and hard to maintain; we ideally want our dataset code to be decoupled from our model training code for better readability and modularity.</i>（官方观点：数据处理代码要和训练代码<b>解耦</b> decouple，否则一团乱麻。）</p>
+  <p><i>Dataset stores the samples and their corresponding labels, and DataLoader wraps an iterable around the Dataset to enable easy access to the samples.</i>（分工：<b>Dataset</b> 负责"第 i 个样本是什么"，<b>DataLoader</b> 负责打包成批 batch、打乱 shuffle、多进程加速。）</p>`},
+ {id:"ch2-k2",t:"加载内置数据集 Loading a built-in dataset",h:`
+  <p>FashionMNIST：Zalando 的服装灰度图，<i>60,000 training examples and 10,000 test examples, each a 28x28 grayscale image with a label from one of 10 classes</i>（T-Shirt/Trouser/…/Ankle boot 共 10 类）。</p>
+  <pre><code>from torchvision import datasets
+from torchvision.transforms import v2
+training_data = datasets.FashionMNIST(
+    root="data",        # 存放路径
+    train=True,         # 训练集还是测试集
+    download=True,      # 不在本地就下载（26.4M）
+    transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
+)
+img, label = training_data[0]   # 可以像列表一样下标索引 / index like a list</code></pre>
+  <p>试运行：<code>.venv/bin/python code/02_dataset_dataloader.py</code>（已在本机验证：batch shape [64, 1, 28, 28]）。</p>`},
+ {id:"ch2-k3",t:"自定义 Dataset 三件套 Custom Dataset: __init__ / __len__ / __getitem__",h:`
+  <p><i>A custom Dataset class must implement three functions: __init__, __len__, and __getitem__.</i>（自定义数据集的"三件套"，缺一不可。）</p>
+  <pre><code>class InMemoryDataset(Dataset):
+    def __init__(self, n=100):        # 建立样本表/读文件，只跑一次
+        torch.manual_seed(0)
+        self.x = torch.randn(n, 2)
+        self.y = self.x @ torch.tensor([2.0, 3.0]) + 1.0
+    def __len__(self):
+        return len(self.x)            # 样本总数
+    def __getitem__(self, idx):       # 给下标 -> 返回 (特征, 标签) 元组
+        return self.x[idx], self.y[idx]</code></pre>
+  <p>官方的图片版 <code>CustomImageDataset</code> 思路完全一样：<code>__getitem__</code> 里 <i>identifies the image's location on disk, converts that to a tensor, retrieves the corresponding label, applies transforms, and returns them in a tuple</i>。记住：<b>Dataset 只回答"idx 是什么"，别的都不管</b>。</p>`},
+ {id:"ch2-k4",t:"DataLoader：成批、打乱 DataLoader: batching & shuffle",h:`
+  <p><i>While training a model, we typically want to pass samples in "minibatches", reshuffle the data at every epoch to reduce model overfitting, and use Python's multiprocessing to speed up data retrieval.</i>（训练要小批量、每轮重洗牌防过拟合、多进程加速读取。DataLoader 一个类全包了。）</p>
+  <pre><code>from torch.utils.data import DataLoader
+train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
+test_dataloader  = DataLoader(test_data, batch_size=64)
+
+train_features, train_labels = next(iter(train_dataloader))
+print(train_features.size())   # torch.Size([64, 1, 28, 28])
+print(train_labels.size())     # torch.Size([64])</code></pre>
+  <p>注意 <code>len(dataloader)</code> = 样本数 ÷ batch_size 向上取整：100 个样本、batch_size=33 → 4 个 batch，最后一个只有 1 个样本。<code>shuffle=True</code> 时<i>after we iterate over all batches the data is shuffled</i>——每个 epoch 自动重新洗牌。</p>`},
+ {id:"ch2-k5",t:"偷懒工具 TensorDataset Sometimes you don't need a class",h:`
+  <p>数据已经在内存里（两个张量 x、y）时，官方的 <code>TensorDataset</code> 一行顶替自定义类：</p>
+  <pre><code>from torch.utils.data import TensorDataset
+ds = TensorDataset(x_tensor, y_tensor)    # 按 idx 返回 (x[i], y[i])
+dl = DataLoader(ds, batch_size=16, shuffle=True)</code></pre>
+  <p>什么时候才需要自定义 Dataset？——数据在磁盘上（图片文件夹、CSV）或需要动态变换时，像官方 <code>CustomImageDataset</code> 那样。</p>`}],
+ex:[
+ {id:"ch2-e1",q:"写一个 y=2x+1 的自定义 Dataset（100 个样本，x 为 1 维），实现三件套，取 ds[3] 验证。Write a minimal custom Dataset for y = 2x + 1.",a:"<pre><code>import torch\nfrom torch.utils.data import Dataset\n\nclass LineDataset(Dataset):\n    def __init__(self, n=100):\n        torch.manual_seed(0)\n        self.x = torch.randn(n, 1)\n        self.y = 2 * self.x + 1\n    def __len__(self):\n        return len(self.x)\n    def __getitem__(self, idx):\n        return self.x[idx], self.y[idx]\n\nds = LineDataset()\nprint(len(ds), ds[3])   # 100 (tensor([...]), tensor([...]))</code></pre>"},
+ {id:"ch2-e2",q:"用 batch_size=7 装载 100 个样本：len(dataloader) 是多少？最后一个 batch 有几个样本？Compute len(dl) and the last batch size.",a:"<pre><code>from torch.utils.data import DataLoader\ndl = DataLoader(LineDataset(), batch_size=7, shuffle=False)\nprint(len(dl))                    # ceil(100/7) = 15\nlast_x, last_y = list(dl)[-1]\nprint(last_x.shape)               # [2,1]  100 = 14*7 + 2\n# 规律：len(dl) = 向上取整(n / batch_size)，最后一队 = n % batch_size（非 0 时）</code></pre>"},
+ {id:"ch2-e3",q:"同一个 DataLoader 迭代两个 epoch，打印每个 epoch 第一个样本，观察 shuffle=True 与 False 的区别。Observe shuffling across epochs.",a:"<pre><code>dl = DataLoader(LineDataset(), batch_size=7, shuffle=True)\nfor epoch in range(2):\n    first_x, _ = next(iter(dl))\n    print(epoch, first_x[0])   # 两个 epoch 不同 -> 每轮重新洗牌\n# 改成 shuffle=False 再跑：两次完全一样。</code></pre><p>官方：<i>reshuffle the data at every epoch to reduce model overfitting</i>。</p>"},
+ {id:"ch2-e4",q:"用 TensorDataset + DataLoader 把 32 个样本按 batch_size=10 分批，遍历打印每批 shape。Batch shapes with TensorDataset.",a:"<pre><code>import torch\nfrom torch.utils.data import TensorDataset, DataLoader\nx = torch.arange(32.).reshape(-1, 1)\ny = x * 2\ndl = DataLoader(TensorDataset(x, y), batch_size=10)\nfor xb, yb in dl:\n    print(xb.shape, yb.shape)   # [10,1] [10,1] x2 然后 [2,1] [2,1]</code></pre>"}]},
+
+{num:"第3章",id:"ch3",title:"Transforms 数据变换",big:"数据预处理 · Preprocessing",blocks:[
+ {id:"ch3-k1",t:"transform 与 target_transform Why transforms",h:`
+  <p><i>Data does not always come in its final processed form that is required for training machine learning algorithms. We use transforms to perform some manipulation of the data and make it suitable for training.</i>（原始数据往往不能直接喂给模型：图像要归一化、标签要转张量。Transform 就是"取样本时顺手做的加工"。）</p>
+  <p><i>All TorchVision datasets have two parameters - transform to modify the features and target_transform to modify the labels - that accept callables containing the transformation logic.</i>（所有数据集都有这两个参数：transform 改特征，target_transform 改标签，都接受任意可调用对象 callable。）</p>`},
+ {id:"ch3-k2",t:"ToImage + ToDtype：像素归一化 Normalize pixels to [0,1]",h:`
+  <p><i>The torchvision.transforms.v2 API replaces the legacy ToTensor transform with a two-step pipeline.</i>（新 API 把老的 ToTensor 拆成两步。）</p>
+  <pre><code>from torchvision.transforms import v2
+transform = v2.Compose([
+    v2.ToImage(),                                # PIL/numpy -> Image 张量
+    v2.ToDtype(torch.float32, scale=True),       # 转 float32 并除以 255 缩到 [0., 1.]
+])</code></pre>
+  <p><i>ToDtype with scale=True casts it to float32 and scales the pixel intensity values to the range [0., 1.]</i>——本机验证：FashionMNIST[0] 的 min/max = 0.0 / 1.0。为什么归一化？数值小而稳定，训练更快更稳。</p>`},
+ {id:"ch3-k3",t:"Lambda 与 one-hot：标签变换 Target transforms",h:`
+  <p>标签是整数 0-9，但有时需要 one-hot 向量（只有一个 1，其余全 0）。官方用 <code>v2.Lambda</code> 包任意函数：</p>
+  <pre><code>import torch.nn.functional as F
+target_transform = v2.Lambda(
+    lambda y: F.one_hot(torch.tensor(y), num_classes=10).float()
+)
+# label 3 -> [0,0,0,1,0,0,0,0,0,0]</code></pre>
+  <p>不用 torchvision 时，任何 Python 函数都能当 transform：<code>transform=lambda t: (t - t.mean()) / t.std()</code>。多个变换用 <code>v2.Compose([...])</code> 按顺序串联（流水线 pipeline）。</p>`}],
+ex:[
+ {id:"ch3-e1",q:"手写归一化 transform：把张量按 (x-mean)/std 变换，对 [[0,1],[0.25,0.75]] 与 mean=std=0.5 计算。Write a normalize transform.",a:"<pre><code>import torch\nmean, std = torch.tensor([0.5, 0.5]), torch.tensor([0.5, 0.5])\nnormalize = lambda x: (x - mean) / std\nx = torch.tensor([[0.0, 1.0], [0.25, 0.75]])\nprint(normalize(x))\n# [[-1., 1.], [-0.5, 0.5]]</code></pre>"},
+ {id:"ch3-e2",q:"写一个 target_transform：整数标签 -> one-hot 张量（5 类）。验证 label 2 的输出。One-hot label transform.",a:"<pre><code>import torch, torch.nn.functional as F\nonehot = lambda y: F.one_hot(torch.tensor(y), num_classes=5).float()\nprint(onehot(2))   # tensor([0., 0., 1., 0., 0.])</code></pre>"},
+ {id:"ch3-e3",q:"实现 mini-Compose：把 (除以 255) 和 (拉平 flatten) 两个变换串联，应用到 (1,3) 模拟图像 [[255],[128],[0]]。Build a Compose pipeline yourself.",a:"<pre><code>import torch\ndef compose(*fns):\n    def run(v):\n        for fn in fns:\n            v = fn(v)\n        return v\n    return run\npipe = compose(lambda t: t / 255.0, lambda t: t.flatten())\nimg = torch.tensor([[[255.], [128.], [0.]]])\nprint(pipe(img))   # tensor([1.0000, 0.5020, 0.0000])</code></pre><p>这就是 Compose 的本质：for 循环依次套用。</p>"}]},
+
+{num:"第4章",id:"ch4",title:"搭建神经网络 Build Model",big:"模型结构 · Architecture",blocks:[
+ {id:"ch4-k1",t:"nn.Module：积木的思想 Every module subclasses nn.Module",h:`
+  <p><i>Neural networks comprise of layers/modules that perform operations on data. The torch.nn namespace provides all the building blocks you need to build your own neural network.</i>（<code>torch.nn</code> 提供全部积木；<i>Every module in PyTorch subclasses the nn.Module. A neural network is a module itself that consists of other modules (layers).</i>——网络本身也是一个 Module，由层 Module 组成，层层嵌套。）</p>
+  <p><i>We define our neural network by subclassing nn.Module, and initialize the neural network layers in __init__. Every nn.Module subclass implements the operations on input data in the forward method.</i>（模板：<b>__init__ 建层，forward 定义数据流向</b>。）</p>
+  <pre><code>class NeuralNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(28*28, 512), nn.ReLU(),
+            nn.Linear(512, 512),   nn.ReLU(),
+            nn.Linear(512, 10),
+        )
+    def forward(self, x):
+        x = self.flatten(x)
+        return self.linear_relu_stack(x)</code></pre>`},
+ {id:"ch4-k2",t:"model(x)，不要 model.forward(x) Call the model, not forward",h:`
+  <p><i>To use the model, we pass it the input data. This executes the model's forward, along with some background operations. Do not call model.forward() directly!</i>（直接调 <code>model(x)</code>——它会连带执行钩子等后台机制；官方原文加粗警告不要直接调 forward。）</p>
+  <pre><code>X = torch.rand(1, 28, 28)
+logits = model(X)                       # [1, 10] 每类一个"原始分数"
+pred_probab = nn.Softmax(dim=1)(logits) # 概率，dim=1 上和为 1
+y_pred = pred_probab.argmax(1)          # 概率最大的类
+print(y_pred)                           # tensor([6])</code></pre>
+  <p><i>We get the prediction probabilities by passing it through an instance of the nn.Softmax module</i>——logits 是 <i>raw values in [-infty, infty]</i>，Softmax 把它们压成 [0,1] 概率。</p>`},
+ {id:"ch4-k3",t:"逐层拆解 Layers: Flatten / Linear / ReLU",h:`
+  <p>拿一批 3 张图 <code>torch.rand(3,28,28)</code> 逐层观察形状变化：</p>
+  <table><tr><th>层</th><th>作用（官方原文要点）</th><th>形状</th></tr>
+  <tr><td><code>nn.Flatten()</code></td><td><i>convert each 2D 28x28 image into a contiguous array of 784 pixel values (the minibatch dimension is maintained)</i>（拉平，保留 batch 维）</td><td>[3,28,28] → [3,784]</td></tr>
+  <tr><td><code>nn.Linear(784,20)</code></td><td><i>applies a linear transformation on the input using its stored weights and biases</i>（y = Wx + b）</td><td>[3,784] → [3,20]</td></tr>
+  <tr><td><code>nn.ReLU()</code></td><td><i>Non-linear activations are what create the complex mappings between the model's inputs and outputs</i>（负数归零，引入非线性）</td><td>[3,20]，负值变 0</td></tr>
+  <tr><td><code>nn.Sequential</code></td><td><i>an ordered container of modules... data is passed through all the modules in the same order as defined</i>（按顺序串起来的容器）</td><td>整条流水线</td></tr></table>
+  <p>为什么必须有激活函数？没有 ReLU 时，多层线性叠加 <i>W2(W1x+b1)+b2 = (W2W1)x + (W2b1+b2)</i> 仍是一层线性映射，再深的网络也只能画直线（code/04 里有实验：合并后最大差异 0.0）。</p>`},
+ {id:"ch4-k4",t:"参数：模型里有什么可学 Model Parameters",h:`
+  <p><i>Many layers inside a neural network are parameterized, i.e. have associated weights and biases that are optimized during training. Subclassing nn.Module automatically tracks all fields defined inside your model object, and makes all parameters accessible using your model's parameters() or named_parameters() methods.</i>（nn.Module 自动登记所有子模块的参数，训练时就优化它们。）</p>
+  <pre><code>for name, param in model.named_parameters():
+    print(name, param.size())
+# linear_relu_stack.0.weight torch.Size([512, 784])
+# linear_relu_stack.0.bias   torch.Size([512])
+# ...共 669,706 个参数（param.numel() 求和）</code></pre>
+  <p>Linear 的参数形状规律：<code>weight: [out_features, in_features]</code>，所以 y = x @ W.T + b。</p>`},
+ {id:"ch4-k5",t:"搬到加速器 Move the model to device",h:`
+  <pre><code>device = "mps" if torch.backends.mps.is_available() else "cpu"
+model = NeuralNetwork().to(device)   # 模型和数据必须在同一设备上</code></pre>
+  <p>训练时三样东西要一起搬：模型 <code>model.to(device)</code>、每个 batch 的 X 和 y（第6章 train_loop 里能看到 <code>Xb.to(device)</code>）。忘了搬数据会报 <code>Expected all tensors to be on the same device</code>。</p>`}],
+ex:[
+ {id:"ch4-e1",q:"手写 TwoLayerNet(784→128→10) 并打印结构；用 torch.rand(4,28,28) 测试输出形状。Define a small network yourself.",a:"<pre><code>import torch\nfrom torch import nn\n\nclass TwoLayerNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.flatten = nn.Flatten()\n        self.stack = nn.Sequential(\n            nn.Linear(28*28, 128), nn.ReLU(), nn.Linear(128, 10))\n    def forward(self, x):\n        return self.stack(self.flatten(x))\n\nm = TwoLayerNet()\nprint(m)\nprint(m(torch.rand(4, 28, 28)).shape)   # torch.Size([4, 10])</code></pre>"},
+ {id:"ch4-e2",q:"统计 TwoLayerNet 的总参数量（用 named_parameters + numel()）。Count parameters.",a:"<pre><code>total = sum(p.numel() for p in m.parameters())\n# 手算核对：784*128 + 128 + 128*10 + 10 = 100480 + 128 + 1280 + 10 = 101,898\nprint(total)   # 101898</code></pre><p>规律：Linear(a,b) 参数量 = a*b + b。</p>"},
+ {id:"ch4-e3",q:"实验证明「无激活函数的多层 = 一层」：用两个 nn.Linear（6→8、8→4）叠加，与「合并权重后的单个 Linear(6→4)」比较输出。Two linear layers collapse into one.",a:"<pre><code>lin1, lin2 = nn.Linear(6, 8), nn.Linear(8, 4)\nx = torch.randn(3, 6)\nwith torch.no_grad():\n    merged = nn.Linear(6, 4)\n    merged.weight.copy_(lin2.weight @ lin1.weight)   # W2@W1\n    merged.bias.copy_(lin2.bias + lin2.weight @ lin1.bias)\n    diff = (lin2(lin1(x)) - merged(x)).abs().max().item()\nprint(diff)   # ≈ 1e-7（浮点误差级）-> 等价于一层\n# 结论：没有 ReLU，叠 100 层也只会画直线。</code></pre>"},
+ {id:"ch4-e4",q:"用 nn.Sequential 重写 TwoLayerNet（不许 class），并用固定输入比较两种写法的输出是否一致（参数按顺序复制）。Sequential-only rewrite.",a:"<pre><code>seq = nn.Sequential(nn.Flatten(), nn.Linear(784, 128), nn.ReLU(), nn.Linear(128, 10))\nfor p_new, p_old in zip(seq.parameters(), m.parameters()):\n    with torch.no_grad():\n        p_new.copy_(p_old)\nx = torch.rand(2, 28, 28)\nprint((m(x) - seq(x)).abs().max().item())   # 0.0\n# 两种写法完全等价；Sequential 胜在简洁，class 胜在可读/可加逻辑。</code></pre>"},
+ {id:"ch4-e5",q:"把模型 .to('mps') 后：打印某个参数的 device；再试只搬模型不搬数据会报什么错（try/except）。Device consistency drill.",a:"<pre><code>dev = \"mps\" if torch.backends.mps.is_available() else \"cpu\"\nm2 = TwoLayerNet().to(dev)\nprint(next(m2.parameters()).device)         # mps:0\ntry:\n    m2(torch.rand(2, 28, 28))               # 数据还在 cpu\nexcept RuntimeError as e:\n    print(\"报错:\", str(e)[:70], \"...\")\n# 修复：m2(torch.rand(2, 28, 28, device=dev))</code></pre>"}]},
+
+{num:"第5章",id:"ch5",title:"Autograd 自动求导",big:"求导引擎 · Differentiation engine",blocks:[
+ {id:"ch5-k1",t:"反向传播与 torch.autograd Back propagation",h:`
+  <p><i>When training neural networks, the most frequently used algorithm is back propagation. In this algorithm, parameters (model weights) are adjusted according to the gradient of the loss function with respect to the given parameter.</i>（反向传播：按"损失对每个参数的梯度"来调整参数。）</p>
+  <p><i>To compute those gradients, PyTorch has a built-in differentiation engine called torch.autograd. It supports automatic computation of gradient for any computational graph.</i>（torch.autograd 是内置求导引擎，能对任意<b>计算图</b> computational graph 自动求导。计算图 = 把每步运算记录成一张有向无环图 DAG，叶节点是输入，根是输出，反向时用链式法则从根往叶追。）</p>
+  <pre><code>x = torch.ones(5)                          # 输入
+y = torch.zeros(3)                         # 期望输出
+w = torch.randn(5, 3, requires_grad=True)  # 参数需要梯度
+b = torch.randn(3, requires_grad=True)
+z = torch.matmul(x, w) + b
+loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)</code></pre>`},
+ {id:"ch5-k2",t:"requires_grad 与 grad_fn Tracking with requires_grad",h:`
+  <p><i>You can set the value of requires_grad when creating a tensor, or later by using x.requires_grad_(True) method.</i>（创建时传参，或后补 <code>requires_grad_()</code>。）</p>
+  <p><i>A function that we apply to tensors to construct computational graph is in fact an object of class Function. This object knows how to compute the function in the forward direction, and also how to compute its derivative during the backward propagation step. A reference to the backward propagation function is stored in grad_fn property of a tensor.</i>（每个中间张量都带 <code>grad_fn</code>——"我是被哪个运算算出来的"，反向时靠它调对应的求导函数。）</p>
+  <pre><code>print(z.grad_fn)     # &lt;AddBackward0 object ...&gt;
+print(loss.grad_fn)  # &lt;BinaryCrossEntropyWithLogitsBackward0 object ...&gt;</code></pre>`},
+ {id:"ch5-k3",t:"backward() 与 .grad Computing gradients",h:`
+  <p><i>To compute those derivatives, we call loss.backward(), and then retrieve the values from w.grad and b.grad.</i>（一次 backward，梯度自动存进每个参数的 <code>.grad</code>。）</p>
+  <pre><code>loss.backward()
+print(w.grad)   # tensor([[0.0089, 0.2207, 0.1268], ...])
+print(b.grad)   # tensor([0.0089, 0.2207, 0.1268])</code></pre>
+  <p>官方两条重要提醒：</p>
+  <ul><li><i>We can only obtain the grad properties for the leaf nodes of the computational graph, which have requires_grad property set to True.</i>（只有叶节点——你亲手创建的 requires_grad 张量——才有 .grad；中间变量没有。）</li>
+  <li><i>We can only perform gradient calculations using backward once on a given graph, for performance reasons. If we need to do several backward calls on the same graph, we need to pass retain_graph=True.</i>（一张图默认只能 backward 一次。）</li></ul>
+  <p>验证实验：y = x²，x=3 → dy/dx = 6，autograd 给出 6.0（code/05）。</p>`},
+ {id:"ch5-k4",t:"梯度是累加的！Gradients accumulate",h:`
+  <p><i>PyTorch accumulates the gradients, i.e. the value of computed gradients is added to the grad property of all leaf nodes of computational graph. If you want to compute the proper gradients, you need to zero out the grad property before. In real-life training an optimizer helps us to do this.</i>（<b>梯度默认累加不覆盖</b>！要干净结果得先清零——这就是训练循环里 <code>optimizer.zero_grad()</code> 存在的原因，第6章见。）</p>
+  <pre><code>x = torch.tensor(3.0, requires_grad=True)
+(x * x).backward();  print(x.grad)   # 6.0
+(x * x).backward();  print(x.grad)   # 12.0  <- 累加了！
+x.grad.zero_()
+(x * x).backward();  print(x.grad)   # 6.0   <- 干净了</code></pre>`},
+ {id:"ch5-k5",t:"关闭追踪 no_grad / detach Disabling gradient tracking",h:`
+  <p><i>However, there are some cases when we do not need to do that, for example, when we have trained the model and just want to apply it to some input data, i.e. we only want to do forward computations through the network.</i>（推理时不需要梯度，用 <code>torch.no_grad()</code> 关掉追踪，省内存提速。）</p>
+  <pre><code>z = torch.matmul(x, w) + b
+print(z.requires_grad)          # True
+with torch.no_grad():
+    z = torch.matmul(x, w) + b
+print(z.requires_grad)          # False
+z_det = z.detach()              # 另一种等价做法
+print(z_det.requires_grad)      # False</code></pre>
+  <p><i>There are reasons you might want to disable gradient tracking: To mark some parameters as frozen parameters. To speed up computations when you are only doing forward pass.</i>（两个用途：冻结参数、纯前向提速。）</p>`}],
+ex:[
+ {id:"ch5-e1",q:"求 y = x³ 在 x=2 处的导数（手算 3x²=12），用 autograd 验证。d/dx of x^3 at x=2.",a:"<pre><code>x = torch.tensor(2.0, requires_grad=True)\ny = x ** 3\ny.backward()\nprint(x.grad)   # tensor(12.)  = 3x²\n# 要点：requires_grad=True 开启追踪；backward 后梯度在 x.grad。</code></pre>"},
+ {id:"ch5-e2",q:"手推验证：z = w·x + b，loss = ((z−y)²).mean()，x=[1,2], y=[0,1], w=[0.5,−0.5], b=0.1。手算 ∂loss/∂w、∂loss/∂b，再和 autograd 对比。Hand-derive gradients and check.",a:"<pre><code>x1 = torch.tensor([1.0, 2.0]); y1 = torch.tensor([0.0, 1.0])\nw = torch.tensor([0.5, -0.5], requires_grad=True)\nb = torch.tensor(0.1, requires_grad=True)\nloss = ((w @ x1 + b - y1) ** 2).mean()\nloss.backward()\nprint(w.grad, b.grad)         # [-1.8, -3.6] -1.8\n# 手推：z=−0.4（标量），u=z−y=[−0.4,−1.4]\n# ∂loss/∂z = Σu = −1.8（mean 把 2u_i 除回 2）\n# ∂loss/∂w = (∂loss/∂z)·x = −1.8·[1,2]； ∂loss/∂b = −1.8  ✓</code></pre>"},
+ {id:"ch5-e3",q:"复现「梯度累加」：同一个表达式 backward 三次，打印每次后的 grad；然后 zero_() 再来一次。Accumulation drill.",a:"<pre><code>x = torch.tensor(3.0, requires_grad=True)\nfor i in range(3):\n    (x * x).backward()\n    print(i, x.grad)          # 6.0 -> 12.0 -> 18.0 累加\nx.grad.zero_()\n(x * x).backward()\nprint(x.grad)                 # 6.0</code></pre>"},
+ {id:"ch5-e4",q:"构造中间张量 h = x*3 并 backward，观察 h.grad 与 UserWarning（这是预期现象！）。Non-leaf has no grad.",a:"<pre><code>x = torch.tensor(2.0, requires_grad=True)\nh = x * 3            # 中间节点（非叶）\n(h * h).backward()   # d/dx (9x²) = 18x = 36\nprint(x.grad)        # 36.0\nprint(h.grad)        # None + UserWarning：只有叶节点存梯度</code></pre>"},
+ {id:"ch5-e5",q:"对同一个线性表达式，分别打印 no_grad 块内外、detach 后的 requires_grad。no_grad / detach drill.",a:"<pre><code>w = torch.randn(3, requires_grad=True)\nprint((w @ w).requires_grad)              # True\nwith torch.no_grad():\n    print((w @ w).requires_grad)          # False\nprint((w.detach() @ w.detach()).requires_grad)  # False</code></pre>"}]},
+
+{num:"第6章",id:"ch6",title:"训练循环 Optimization",big:"让模型学习 · Training loop",blocks:[
+ {id:"ch6-k1",t:"训练的本质 What training is",h:`
+  <p><i>Training a model is an iterative process; in each iteration the model makes a guess about the output, calculates the error in its guess (loss), collects the derivatives of the error with respect to its parameters, and optimizes these parameters using gradient descent.</i>（每轮四拍：猜 → 算误差 → 求梯度 → 沿梯度走一小步（梯度下降 gradient descent）。）</p>
+  <p><i>Each epoch consists of two main parts: The Train Loop - iterate over the training dataset and try to converge to optimal parameters. The Validation/Test Loop - iterate over the test dataset to check if model performance is improving.</i>（每个 epoch = 训练循环 + 测试循环。）</p>`},
+ {id:"ch6-k2",t:"三大超参数 Hyperparameters",h:`
+  <p><i>Hyperparameters are adjustable parameters that let you control the model optimization process.</i>（超参数由人设定，模型自己学不到。）</p>
+  <table><tr><th>超参数</th><th>官方定义</th><th>本课取值</th></tr>
+  <tr><td>Number of Epochs</td><td><i>the number of times to iterate over the dataset</i></td><td>5~10</td></tr>
+  <tr><td>Batch Size</td><td><i>the number of data samples propagated through the network before the parameters are updated</i></td><td>64</td></tr>
+  <tr><td>Learning Rate</td><td><i>how much to update models parameters at each batch/epoch. Smaller values yield slow learning speed, while large values may result in unpredictable behavior during training.</i></td><td>1e-3</td></tr></table>
+  <p>本机实验（code/06，拟合 y=2x+1，300 epoch）：lr=1e-5 → loss 3.67 几乎没学；lr=0.05 → 收敛到 0；lr=10 → NaN 发散。lr 是最容易调崩的超参数。</p>`},
+ {id:"ch6-k3",t:"损失函数 Loss Functions",h:`
+  <p><i>Loss function measures the degree of dissimilarity of obtained result to the target value, and it is the loss function that we want to minimize during training.</i>（损失 = 预测与答案的差距，训练的目标就是让它变小。）</p>
+  <ul><li><code>nn.MSELoss</code>（均方误差）：回归 regression 任务</li>
+  <li><code>nn.NLLLoss</code>（负对数似然）：分类（配合 LogSoftmax）</li>
+  <li><code>nn.CrossEntropyLoss</code>：<i>combines nn.LogSoftmax and nn.NLLLoss</i>——直接吃 logits，别再手动加 Softmax（新手第二大坑）</li></ul>
+  <pre><code>loss_fn = nn.CrossEntropyLoss()
+pred = model(X)          # logits，不要 softmax！
+loss = loss_fn(pred, y)</code></pre>`},
+ {id:"ch6-k4",t:"优化器与训练三步 Optimizer & the three steps",h:`
+  <p><i>All optimization logic is encapsulated in the optimizer object.</i>（优化逻辑全在 optimizer 里；常用 <code>torch.optim.SGD</code>、Adam、RMSProp。）</p>
+  <pre><code>optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)</code></pre>
+  <p><i>Inside the training loop, optimization happens in three steps:</i></p>
+  <ol><li><code>optimizer.zero_grad()</code> —— <i>Gradients by default add up; to prevent double-counting, we explicitly zero them at each iteration</i>（梯度默认累加，每轮必须清零，见第5章）</li>
+  <li><code>loss.backward()</code> —— <i>PyTorch deposits the gradients of the loss w.r.t. each parameter</i></li>
+  <li><code>optimizer.step()</code> —— <i>adjust the parameters by the gradients collected in the backward pass</i></li></ol>
+  <p>顺序固定：zero_grad → backward → step。本机实验：忘记 zero_grad 时，同样 300 epoch loss 只能停在 0.598 而不是 0。</p>`},
+ {id:"ch6-k5",t:"官方 train_loop / test_loop 全文 The full implementation",h:`
+  <pre><code>def train_loop(dataloader, model, loss_fn, optimizer):
+    model.train()                      # 训练模式（dropout/batchnorm 需要）
+    for batch, (X, y) in enumerate(dataloader):
+        pred = model(X)                # 1. 猜
+        loss = loss_fn(pred, y)        # 2. 误差
+        loss.backward()                # 3. 求梯度
+        optimizer.step()               # 4. 更新
+        optimizer.zero_grad()          # 5. 清梯度（写 step 后面也一样）
+
+def test_loop(dataloader, model, loss_fn):
+    model.eval()                       # 评估模式
+    test_loss, correct = 0, 0
+    with torch.no_grad():              # 测试不算梯度（第5章）
+        for X, y in dataloader:
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    test_loss /= len(dataloader); correct /= len(dataloader.dataset)
+    print(f"Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f}")</code></pre>
+  <p>官方跑 FashionMNIST 10 个 epoch：accuracy 从 48.8% 爬到 70.6%，loss 从 2.30 降到 0.79。读懂这两个函数 = 会训练一切模型（结构不同，循环不变）。</p>`}],
+ex:[
+ {id:"ch6-e1",q:"训练 nn.Linear(1,1) 拟合 y=2x+1（64 样本、batch 16、300 epoch、SGD lr=0.05），报告学到的 w 和 b。Fit y = 2x + 1 and report learned params.",a:"<pre><code># 思路见 code/06_optimization.py 第 1 节（完整可运行）\nmodel = nn.Linear(1, 1)\nopt = torch.optim.SGD(model.parameters(), lr=0.05)\nfor _ in range(300):\n    for xb, yb in loader:\n        pred = model(xb)\n        loss = ((pred - yb) ** 2).mean()\n        opt.zero_grad(); loss.backward(); opt.step()\nprint(model.weight.item(), model.bias.item())\n# 期望: w≈2.0000, b≈1.0000（本机实测）</code></pre>"},
+ {id:"ch6-e2",q:"用同一模型同一数据分别以 lr=1e-5、0.05、10 训练 300 epoch，打印最终 loss，解释三种现象。Learning-rate sweep.",a:"<pre><code># code/06 第 2 节实测：\n# lr=1e-5  final loss=3.669374  <- 步子太小，300 步几乎没动\n# lr=0.05  final loss=0.000000  <- 恰到好处\n# lr=10    final loss=nan       <- 步子太大，来回跳飞了\n# 结论：官方说的 unpredictable behavior 就是发散/NaN。</code></pre>"},
+ {id:"ch6-e3",q:"复现「忘记 zero_grad」的 bug：训练函数加开关跳过 zero_grad，对比 300 epoch 后的 loss。Reproduce the forgotten zero_grad bug.",a:"<pre><code># code/06 第 3 节实测：\n# 正常 zero_grad:  final loss=0.000000\n# 忘记 zero_grad:  final loss=0.598068\n# 原因：梯度累加（第5章），每轮的有效步长越来越大，无法收敛。</code></pre>"},
+ {id:"ch6-e4",q:"逐符号解释 accuracy 的表达式：(pred.argmax(1) == y).type(torch.float).sum().item() / len(y)。Decode the accuracy expression.",a:"<pre><code># pred.argmax(1)     -> 每行 logits 最大的类下标 [batch]\n# == y               -> 逐样本布尔张量 [batch]（True/False）\n# .type(torch.float) -> 转成 1.0/0.0\n# .sum().item()      -> 对的个数（转成 Python 数）\n# / len(y)           -> 正确率\n# 全程没有 .cpu()/numpy，纯张量运算，GPU/MPS 上也高效。</code></pre>"},
+ {id:"ch6-e5",q:"把第 6.1 题的优化器换成 Adam（lr=0.05），只训 20 epoch 与 SGD 对比最终 loss。SGD vs Adam.",a:"<pre><code># code/06 第 4 节实测（20 epoch）：\n# SGD  final loss=0.002507\n# Adam final loss=0.000482   <- 自适应步长，此处快得多\n# 换法：torch.optim.Adam(model.parameters(), lr=0.05)</code></pre>"}]},
+
+{num:"第7章",id:"ch7",title:"保存与加载 Save & Load",big:"模型存取 · Persistence",blocks:[
+ {id:"ch7-k1",t:"state_dict：参数的家 state_dict",h:`
+  <p><i>PyTorch models store the learned parameters in an internal state dictionary, called state_dict.</i>（模型所有学到的参数都在一个字典里：键 = 层名，值 = 张量。）</p>
+  <pre><code>for k, v in model.state_dict().items():
+    print(k, v.shape)
+# weight: shape (1, 1)
+# bias:   shape (1,)</code></pre>`},
+ {id:"ch7-k2",t:"保存/加载权重（官方推荐做法）Save & load weights",h:`
+  <pre><code>torch.save(model.state_dict(), "model_weights.pth")      # 保存
+
+model = NeuralNetwork()                                  # 先建同结构实例
+model.load_state_dict(torch.load("model_weights.pth", weights_only=True))
+model.eval()</code></pre>
+  <p><i>To load model weights, you need to create an instance of the same model first, and then load the parameters using load_state_dict() method.</i>（加载前必须先实例化"同结构"的模型——pth 里只有数字没有结构。）</p>
+  <p><i>Using weights_only=True is considered a best practice when loading weights</i>（限制反序列化能执行的函数，更安全。）</p>`},
+ {id:"ch7-k3",t:"别忘了 model.eval() Why model.eval() matters",h:`
+  <p><i>Be sure to call model.eval() method before inferencing to set the dropout and batch normalization layers to evaluation mode. Failing to do this will yield inconsistent inference results.</i>（eval() 让 dropout/batchnorm 进入推理行为；忘了调用 → 同一输入每次输出都不一样。）</p>
+  <p>对应地，训练时调用 <code>model.train()</code>。对本课的全连接小网络没影响，但习惯必须从现在养对。</p>`},
+ {id:"ch7-k4",t:"整模型保存 vs checkpoint Whole-model vs checkpoint",h:`
+  <p><i>We might want to save the structure of this class together with the model, in which case we can pass model (and not model.state_dict()) to the saving function.</i></p>
+  <pre><code>torch.save(model, "model.pth")                # 整模型（legacy 做法）
+model = torch.load("model.pth", weights_only=False)
+# 官方注明: saving state_dict is considered the best practice
+# 整模型用 pickle 序列化，加载时依赖类的定义代码存在。</code></pre>
+  <p><b>checkpoint（续训现场）</b>——训练中断后接着练：</p>
+  <pre><code>torch.save({"epoch": 10,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": opt.state_dict(),
+            "loss": loss.item()}, "checkpoint.pth")
+
+ckpt = torch.load("checkpoint.pth", weights_only=True)
+model.load_state_dict(ckpt["model_state_dict"])
+opt.load_state_dict(ckpt["optimizer_state_dict"])   # 动量等状态也恢复</code></pre>
+  <p>本机实验（code/07）：训 10 步 loss=0.770 → checkpoint → 续训 100 步 loss=0.0007。</p>`}],
+ex:[
+ {id:"ch7-e1",q:"训练 nn.Linear(1,1) 拟合 y=2x+1，保存 state_dict，重新加载到新实例，验证两者在同一输入下输出一致。Save, load, verify.",a:"<pre><code># code/07 完整版\nx = torch.linspace(-1, 1, 64).reshape(-1, 1); y = 2 * x + 1\nmodel = nn.Linear(1, 1)   # 训练若干步...\ntorch.save(model.state_dict(), \"linear_weights.pth\")\nloaded = nn.Linear(1, 1)\nloaded.load_state_dict(torch.load(\"linear_weights.pth\", weights_only=True))\nloaded.eval()\nxt = torch.tensor([[0.3], [-0.7]])\nprint(torch.allclose(model(xt), loaded(xt)))   # True</code></pre>"},
+ {id:"ch7-e2",q:"打印一个 Sequential(Linear(4,8), ReLU, Linear(8,2)) 的 state_dict：有几个键？形状分别是什么？Inspect state_dict keys.",a:"<pre><code>m = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))\nfor k, v in m.state_dict().items():\n    print(k, tuple(v.shape))\n# 0.weight (8,4)  0.bias (8,)  2.weight (2,8)  2.bias (2,)\n# ReLU 没有参数 -> 键跳号（0, 2）。规律：键名 = 层下标.参数名。</code></pre>"},
+ {id:"ch7-e3",q:"故意把一个模型的权重加载到结构不同的模型上，捕获 RuntimeError 并读懂第一行报错。Shape-mismatch error drill.",a:"<pre><code>small = nn.Linear(1, 1)\nbig = nn.Sequential(nn.Linear(1, 8), nn.ReLU(), nn.Linear(8, 1))\ntry:\n    big.load_state_dict(small.state_dict())\nexcept RuntimeError as e:\n    print(str(e).splitlines()[0])\n# Error(s) in loading state_dict for Sequential:\n# state_dict 按名字+形状严格匹配，多键/少键/形状不对都报错。</code></pre>"},
+ {id:"ch7-e4",q:"保存一个含 epoch/model/optimizer/loss 的 checkpoint，恢复到新模型+新优化器，继续训练并观察 loss 下降。Checkpoint resume drill.",a:"<pre><code># code/07 第 4 节实测输出：\n# 恢复 checkpoint: epoch=10 loss=0.770457\n# 继续训练 100 步后 loss: 0.000674\n# 关键：optimizer_state_dict 也恢复，Adam 动量等状态不丢。</code></pre>"}]},
+
+{num:"第8章",id:"ch8",title:"里程碑：完整闭环 Milestone",big:"端到端项目 · End to end",blocks:[
+ {id:"ch8-k1",t:"全流程串讲 The complete workflow",h:`
+  <p><i>Now that we have a model and data it's time to train, validate and test our model by optimizing its parameters on our data.</i>把 1-7 章串成一条流水线：</p>
+  <table><tr><th>步骤</th><th>用到</th><th>章</th></tr>
+  <tr><td>1. 准备数据</td><td>Dataset / DataLoader / transforms</td><td>2, 3</td></tr>
+  <tr><td>2. 定义模型</td><td>nn.Module + Sequential，搬上 device</td><td>4</td></tr>
+  <tr><td>3. 选损失和优化器</td><td>CrossEntropyLoss / SGD 或 Adam</td><td>6</td></tr>
+  <tr><td>4. 训练循环</td><td>zero_grad → backward → step</td><td>5, 6</td></tr>
+  <tr><td>5. 测试循环</td><td>model.eval() + no_grad + accuracy</td><td>6, 7</td></tr>
+  <tr><td>6. 保存/加载</td><td>state_dict + checkpoint</td><td>7</td></tr></table>
+  <p>官方数据点：同款 MLP 在 FashionMNIST 上 SGD lr=1e-3 batch=64 训 10 epoch，accuracy 48.8% → 70.6%。</p>`},
+ {id:"ch8-k2",t:"项目 A：FashionMNIST 端到端（真数据）Project A",h:`
+  <p>完整脚本：<code>.venv/bin/python code/08_milestone.py --fashion</code>（首次自动下载 26.4M，本机已装 torchvision 0.29.2）。官方同款超参数：</p>
+  <pre><code>learning_rate, batch_size = 1e-3, 64
+model = nn.Sequential(nn.Flatten(),
+                      nn.Linear(28*28, 512), nn.ReLU(),
+                      nn.Linear(512, 10)).to(device)
+loss_fn = nn.CrossEntropyLoss()            # 直接吃 logits
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+for t in range(epochs):                    # train_loop + test_loop 见第6章
+    train_loop(train_dl, model, loss_fn, optimizer)
+    test_loop(test_dl, model, loss_fn)</code></pre>`},
+ {id:"ch8-k3",t:"项目 B：纯 torch 合成数据分类（无下载）Project B",h:`
+  <p>不想下载数据也能走完全流程：<code>.venv/bin/python code/08_milestone.py</code> 用两个同心圆做二分类（800 样本，80/20 划分），MLP 2→64→64→2，Adam lr=1e-2，5 epoch。本机实测 <b>test accuracy 100%</b>，最佳 checkpoint 已自动保存。</p>
+  <p>这个脚本同时示范了官方 <code>train_loop</code>/<code>test_loop</code> 的完整写法和「跟踪最佳模型并保存」的常用技巧——可以直接当你的第一个项目模板改。</p>`}],
+ex:[
+ {id:"ch8-e1",q:"跑通 code/08_milestone.py，报告最终 test accuracy 和保存的 checkpoint 文件名。Run the milestone script.",a:"<pre><code>.venv/bin/python code/08_milestone.py\n# 期望（本机实测）：最佳 test accuracy: 1.000（已保存到 best_mlp.pth）\n# 思考：合成任务太简单才 100%；真实数据上 70% 已经不错。</code></pre>"},
+ {id:"ch8-e2",q:"把 MLP(64) 加宽到 MLP(256) 或再加深一层，对比 accuracy 与训练时间。Widen / deepen the network.",a:"<pre><code># 改 class MLP(nn.Module) 里的 hidden=256，或 Sequential 再插一层\n# 观察：这种小任务 accuracy 不会变（都 100%），但参数量和耗时上升\n# 经验：先加宽再加深；小任务不需要大网络</code></pre>"},
+ {id:"ch8-e3",q:"（挑战）改造 08 脚本：跟踪每个 epoch 的 test accuracy，保存「历史最佳」checkpoint；训练结束重新加载它并推理两个样本。Track and reload the best model.",a:"<pre><code>best = 0.0\nfor t in range(epochs):\n    train_loop(...); acc = test_loop(...)\n    if acc > best:\n        best = acc\n        torch.save(model.state_dict(), \"best_mlp.pth\")\nfresh = MLP().to(device)\nfresh.load_state_dict(torch.load(\"best_mlp.pth\", weights_only=True))\nfresh.eval()\nwith torch.no_grad():\n    print(fresh(torch.tensor([[0.2, 0.1], [1.8, 0.0]], device=device)))\n# 脚本已含此逻辑（ch8-k3），答案就是理解它。</code></pre>"}]},
+];
+
+const CHECKLIST=[
+ {id:"ck1",t:"能默写创建张量的四种方式：torch.tensor / from_numpy / *_like / rand-ones-zeros(shape)"},
+ {id:"ck2",t:"能不看文档说出张量三大属性 shape / dtype / device，并知道 dtype 不匹配会报错"},
+ {id:"ck3",t:"能区分 @（矩阵乘）与 *（逐元素乘），会 .item() 取值，知道 _ 后缀是 in-place 且求导时慎用"},
+ {id:"ck4",t:"能手写三件套 Dataset（__init__/__len__/__getitem__）并用 DataLoader 取 batch"},
+ {id:"ck5",t:"能解释 transform 与 target_transform 的分工，会写 Lambda 和手写归一化"},
+ {id:"ck6",t:"能默写 nn.Module 模板：__init__ 建层、forward 定前向、用 model(x) 而非 model.forward(x)"},
+ {id:"ck7",t:"能说清 Flatten / Linear / ReLU / Sequential / Softmax 各自作用与输入输出形状"},
+ {id:"ck8",t:"能解释 requires_grad / grad_fn / .grad / backward 的关系，知道只有叶节点有 .grad、梯度默认累加"},
+ {id:"ck9",t:"能默写训练三步 zero_grad → backward → step，并解释每步为什么不能省"},
+ {id:"ck10",t:"会写 test_loop：model.eval() + torch.no_grad() + accuracy 统计"},
+ {id:"ck11",t:"会用 state_dict 保存/加载模型，知道 weights_only=True 和 model.eval()"},
+ {id:"ck12",t:"能端到端训练一个小分类器（code/08），报告 test accuracy 并保存最佳 checkpoint"}
+];
+const CHEATSHEET=`<table><tr><th>需求 Need</th><th>写法 How</th></tr>
+<tr><td>创建张量 Create</td><td><code>torch.tensor(data)</code> · <code>torch.from_numpy(a)</code> · <code>torch.rand/ones/zeros((2,3))</code> · <code>torch.rand_like(x, dtype=torch.float)</code></td></tr>
+<tr><td>属性 Attributes</td><td><code>x.shape</code> · <code>x.dtype</code> · <code>x.device</code> · <code>x.numel()</code></td></tr>
+<tr><td>变形 Reshape</td><td><code>x.view(3,4)</code> · <code>x.view(-1)</code> · <code>x.reshape(2,6)</code> · <code>x.unsqueeze(0)</code> · <code>x.squeeze()</code> · <code>x.T</code> · <code>x.flatten()</code></td></tr>
+<tr><td>拼接 Join</td><td><code>torch.cat([a,b], dim=0)</code>（同维拼接）· <code>torch.stack([a,b], dim=0)</code>（新增一维）</td></tr>
+<tr><td>运算 Ops</td><td><code>a @ b</code> 矩阵乘 · <code>a * b</code> 逐元素 · <code>x.sum()/mean()/max()</code> · <code>x.argmax(1)</code> · <code>x.item()</code> · <code>x.add_(5)</code> in-place</td></tr>
+<tr><td>设备 Device</td><td><code>x.to("mps")</code> · <code>x.cpu()</code> · <code>torch.backends.mps.is_available()</code> · <code>cuda.is_available()</code></td></tr>
+<tr><td>数据 Data</td><td><code>Dataset</code> 实现 <code>__init__/__len__/__getitem__</code> · <code>TensorDataset(x,y)</code> · <code>DataLoader(ds, batch_size=64, shuffle=True)</code> · <code>next(iter(dl))</code></td></tr>
+<tr><td>变换 Transforms</td><td><code>v2.Compose([...])</code> · <code>v2.ToImage()</code> · <code>v2.ToDtype(torch.float32, scale=True)</code> · <code>v2.Lambda(fn)</code> · <code>F.one_hot(y, n)</code></td></tr>
+<tr><td>模型 Model</td><td><code>class M(nn.Module): __init__ 建层 + forward</code> · <code>nn.Linear(a,b)</code> · <code>nn.ReLU()</code> · <code>nn.Sequential(...)</code> · <code>nn.Flatten()</code> · <code>nn.Softmax(dim=1)</code> · <code>model(x)</code> · <code>model.parameters()</code></td></tr>
+<tr><td>求导 Autograd</td><td><code>x = torch.tensor(3., requires_grad=True)</code> · <code>x.requires_grad_(True)</code> · <code>loss.backward()</code> · <code>p.grad</code> · <code>p.grad.zero_()</code> · <code>with torch.no_grad():</code> · <code>x.detach()</code></td></tr>
+<tr><td>训练 Train</td><td><code>nn.MSELoss()</code> 回归 · <code>nn.CrossEntropyLoss()</code> 分类(吃logits) · <code>torch.optim.SGD(p, lr=1e-3)</code> / <code>Adam</code> · 三步：<code>zero_grad() → loss.backward() → optimizer.step()</code> · <code>model.train()</code>/<code>model.eval()</code></td></tr>
+<tr><td>保存 Save</td><td><code>torch.save(model.state_dict(), "m.pth")</code> · <code>m.load_state_dict(torch.load("m.pth", weights_only=True))</code> · checkpoint 存 epoch+optimizer · <code>model.eval()</code> 后推理</td></tr></table>`;
+
+const $=s=>document.querySelector(s);
+const cur=()=>S.current;
+const udata=()=>S.users[cur()];
+
+function buildNav(){
+ const n=$("#navlist");n.innerHTML="";
+ CH.forEach(c=>{
+  const a=document.createElement("a");a.className="navlink";a.href="#"+c.id;a.dataset.nav=c.id;
+  a.innerHTML="<span>"+c.num+" · "+c.title+"</span><span class='badge' data-badge='"+c.id+"'>0/0</span>";
+  n.appendChild(a);
+ });
+ const a2=document.createElement("a");a2.className="navlink";a2.href="#cheat";a2.dataset.nav="cheat";
+ a2.innerHTML="<span>速查表 Cheat sheet</span>";n.appendChild(a2);
+ const a3=document.createElement("a");a3.className="navlink";a3.href="#chkl";a3.dataset.nav="chkl";
+ a3.innerHTML="<span>自查清单 Self-check</span><span class='badge' data-badge='chkl'>0/0</span>";n.appendChild(a3);
+}
+
+function buildMain(){
+ const m=$("#main");m.innerHTML="";
+ CH.forEach(c=>{
+  const sec=document.createElement("section");sec.id=c.id;
+  const items=c.blocks.length+c.ex.length;
+  let h="<div class='chhead'><div><h2>"+c.num+" "+c.title+"</h2><div class='sub'>"+items+" 个小项 · 大打卡独立记录 / "+items+" items, big check-in is separate</div></div>";
+  h+="<div class='bigwrap'><div style='display:flex;align-items:center;gap:10px'>"
+   +"<span class='mini'>"+items+" 项进度 / progress</span><div class='bar' data-bar='"+c.id+"' style='width:90px'><i></i></div>"
+   +"<button class='ck big' data-item='big-"+c.id+"'></button></div>"
+   +"<div class='when' data-when='big-"+c.id+"'></div><div class='mini'>"+c.big+" / big check-in</div></div></div>";
+  c.blocks.forEach(b=>{
+   h+="<div class='block'><div class='blockhead'><button class='ck' data-item='"+b.id+"'></button><h3>"+b.t+"</h3><span class='when' data-when='"+b.id+"'></span></div><div class='itembody'>"+b.h+"</div></div>";
+  });
+  c.ex.forEach(e=>{
+   h+="<div class='block'><div class='blockhead'><button class='ck' data-item='"+e.id+"'></button><h3><span class='tag'>习题 Exercise</span>"+e.q+"</h3><span class='when' data-when='"+e.id+"'></span></div><details><summary>显示答案 Show answer</summary><div class='itembody'>"+e.a+"</div></details></div>";
+  });
+  sec.innerHTML=h;m.appendChild(sec);
+ });
+ const s2=document.createElement("section");s2.id="cheat";
+ s2.innerHTML="<div class='chhead'><div><h2>高频 API 速查 Cheat sheet</h2><div class='sub'>查阅用，不打卡 / reference only</div></div></div>"+CHEATSHEET;
+ m.appendChild(s2);
+ const s3=document.createElement("section");s3.id="chkl";
+ let h3="<div class='chhead'><div><h2>学完自查清单 Self-check checklist</h2><div class='sub'>全部能做到就出师了 / all done = graduation</div></div></div>";
+ CHECKLIST.forEach(c=>{
+  h3+="<div class='block'><div class='blockhead'><button class='ck' data-item='"+c.id+"'></button><h3 style='font-weight:400;font-size:14px'>"+c.t+"</h3><span class='when' data-when='"+c.id+"'></span></div></div>";
+ });
+ s3.innerHTML=h3;m.appendChild(s3);
+}
+
+function fmtWhen(v){return v?v.slice(0,10):""}
+function applyState(){
+ document.querySelectorAll("[data-item]").forEach(el=>{
+  const id=el.dataset.item,v=udata()&&udata().checks[id];
+  el.classList.toggle("on",!!v);
+ });
+ document.querySelectorAll("[data-when]").forEach(el=>{
+  const v=udata()&&udata().checks[el.dataset.when];
+  el.textContent=v?("打卡于 / checked "+fmtWhen(v)):"";
+ });
+ updateProgress();
+}
+function updateProgress(){
+ const done=id=>udata()&&!!udata().checks[id];
+ CH.forEach(c=>{
+  const ids=[...c.blocks,...c.ex].map(x=>x.id);
+  const n=ids.filter(done).length;
+  setBadge(c.id,n+"/"+ids.length,n===ids.length);
+  const bar=document.querySelector("[data-bar='"+c.id+"'] i");
+  if(bar)bar.style.width=(100*n/ids.length)+"%";
+ });
+ const ckIds=CHECKLIST.map(c=>c.id);
+ const cn=ckIds.filter(done).length;
+ setBadge("chkl",cn+"/"+ckIds.length,cn===ckIds.length);
+ const total=CH.reduce((s,c)=>s+c.blocks.length+c.ex.length,0)+ckIds.length;
+ const dn=CH.reduce((s,c)=>s+[...c.blocks,...c.ex].map(x=>x.id).filter(done).length,0)+cn;
+ setBadge("ALL",dn+"/"+total,dn===total);
+ const ab=document.querySelector("[data-bar='ALL'] i");if(ab)ab.style.width=(100*dn/total)+"%";
+}
+function setBadge(id,txt,alldone){
+ document.querySelectorAll("[data-badge='"+id+"']").forEach(b=>{b.textContent=txt;b.classList.toggle("done",alldone)});
+}
+function refreshUsers(){
+ const sel=$("#usel");sel.innerHTML="";
+ Object.keys(S.users).forEach(n=>{
+  const o=document.createElement("option");o.value=n;o.textContent=n;
+  if(n===S.current)o.selected=true;sel.appendChild(o);
+ });
+ $("#uname").textContent=S.current?("当前用户 / current: "+S.current):"未选择用户 / no user";
+}
+document.addEventListener("click",e=>{
+ const el=e.target.closest(".ck");if(!el)return;
+ if(!cur()){showModal(false);return}
+ const id=el.dataset.item,cks=udata().checks;
+ if(cks[id])delete cks[id];else cks[id]=new Date().toISOString();
+ save();applyState();
+});
+$("#burger").addEventListener("click",()=>$("#layout").classList.toggle("hide"));
+$("#usel").addEventListener("change",e=>{S.current=e.target.value;save();applyState()});
+$("#uadd").addEventListener("click",()=>showModal(true));
+function showModal(cancellable){
+ $("#mcancel").style.display=cancellable?"inline-block":"none";
+ $("#modal").classList.add("show");$("#mname").value="";$("#mname").focus();
+}
+$("#mok").addEventListener("click",()=>{
+ const name=$("#mname").value.trim();if(!name)return;
+ if(!S.users[name])S.users[name]={created:new Date().toISOString(),lastVisit:new Date().toISOString(),checks:{}};
+ S.current=name;save();refreshUsers();applyState();$("#modal").classList.remove("show");
+});
+$("#mcancel").addEventListener("click",()=>$("#modal").classList.remove("show"));
+$("#mname").addEventListener("keydown",e=>{if(e.key==="Enter")$("#mok").click()});
+$("#exp").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+ a.download="pytorch-basics-progress-backup.json";a.click();
+});
+$("#impfile").addEventListener("change",e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{try{
+   const d=JSON.parse(r.result);
+   if(d&&d.users){Object.assign(S.users,d.users);if(d.current&&!S.current)S.current=d.current;
+    save();refreshUsers();applyState();alert("导入成功 / imported")}
+ }catch(err){alert("文件格式不对 / invalid file")}};
+ r.readAsText(f);e.target.value="";
+});
+const spy=new IntersectionObserver(es=>{
+ es.forEach(en=>{
+  if(en.isIntersecting){
+   document.querySelectorAll(".navlink").forEach(a=>a.classList.toggle("active",a.dataset.nav===en.target.id));
+  }
+ });
+},{rootMargin:"-40% 0px -55% 0px"});
+
+buildNav();buildMain();
+if(!S.current){showModal(false)}
+else{udata().lastVisit=new Date().toISOString();save()}
+refreshUsers();applyState();
+document.querySelectorAll("section").forEach(s=>spy.observe(s));
+</script>
+</body>
+</html>
