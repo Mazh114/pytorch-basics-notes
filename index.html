@@ -58,6 +58,17 @@ th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-ali
 th{background:#f5f5f4}
 details{border:1px dashed #cbd5e1;border-radius:10px;padding:8px 12px;margin:8px 0;background:#fafaf9}
 summary{cursor:pointer;font-size:13px;color:var(--acc);font-weight:600}
+details.dd{border:1px solid var(--acc2);border-radius:12px;background:#fff;padding:0;overflow:hidden;margin:10px 0}
+details.dd>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--acc2);color:#7c2d12;font-weight:700;font-size:13px;border-radius:0}
+details.dd>summary::-webkit-details-marker{display:none}
+details.dd>summary::before{content:"▶";font-size:10px;transition:transform .15s}
+details.dd[open]>summary::before{transform:rotate(90deg)}
+.ddb{padding:10px 16px 14px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.8}
+.ddb p{margin:7px 0}
+.ddb ul,.ddb ol{margin:7px 0 7px 22px}
+.ddb table{margin:8px 0}
+.ddb .en{color:var(--mut);font-size:12.5px}
+.ddb .pit{background:#fef2f2;color:#991b1b;border-radius:8px;padding:7px 10px;font-size:12.5px}
 .exq{font-size:14px}
 .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--acc2);color:#7c2d12;margin-right:6px}
 #modal{position:fixed;inset:0;background:rgba(28,25,23,.55);display:none;align-items:center;justify-content:center;z-index:100}
@@ -125,7 +136,18 @@ print(torch.__version__)            # 2.15.0
 # macOS Apple Silicon 的加速器是 MPS (Metal Performance Shaders)
 dev = "mps" if torch.backends.mps.is_available() else "cpu"
 print(dev)                           # mps</code></pre>
-  <p>配套脚本：<code>code/00_setup.py</code>。运行（本项目已配好 .venv）：<br><code>cd /Users/mzh24/agent/ali/cs50/pytorch-basics</code> 然后 <code>.venv/bin/python code/00_setup.py</code></p>`},
+  <p>配套脚本：<code>code/00_setup.py</code>。运行（本项目已配好 .venv）：<br><code>cd /Users/mzh24/agent/ali/cs50/pytorch-basics</code> 然后 <code>.venv/bin/python code/00_setup.py</code></p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · CPU、GPU、MPS 到底是什么，为什么算矩阵要用它们？</summary><div class="ddb">
+  <p class="en">A GPU/accelerator is a chip built to do thousands of small math operations at the same time — exactly what neural networks need.</p>
+  <p>深度学习的每一步本质上都是"海量乘法+加法"（比如 784×512 的矩阵乘 = 40 万次乘加）。CPU 像 <b>1 位数学教授</b>，单题算得又快又聪明，但一次只能并行处理几道题；GPU/MPS 像 <b>几千名小学生</b>，每人只会加减乘除，但几千道简单题同时算，总速度远超教授。神经网络恰好就是"几百万道简单题"，所以天然适合并行芯片。</p>
+  <ul>
+  <li><b>CPU</b>：通用芯片，张量默认建在它上面，任何机器都有。</li>
+  <li><b>CUDA GPU</b>：NVIDIA 显卡，用 <code>torch.cuda.is_available()</code> 检测，深度学习主流硬件。</li>
+  <li><b>MPS</b>：Apple 芯片（M 系列）里的 GPU，通过 Metal 框架暴露给 PyTorch，用 <code>torch.backends.mps.is_available()</code> 检测——你的 Mac 属于这种。</li>
+  </ul>
+  <p>设备检测那两行代码的逻辑就是："有并行芯片就用它，没有就退回 CPU"。写代码时把它存成一个 <code>device</code> 字符串，后面所有 <code>.to(device)</code> 都引用它，一改全改。</p>
+  <p class="pit">⚠️ 你的 Mac 上别写 <code>torch.cuda...</code>（那是 NVIDIA 专用）；也注意 CPU 上能跑通所有教学代码，加速器只影响"多快"，不影响"能不能"。</p>
+  </div></details>`},
  {id:"ch0-k2",t:"张量搬上/搬下加速器 Moving tensors to a device",h:`
   <p><i>By default, tensors are created on the CPU. We need to explicitly move tensors to the accelerator using .to method.</i>（张量默认建在 CPU 上，要用 <code>.to()</code> 显式搬到加速器。）</p>
   <pre><code>device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
@@ -134,7 +156,18 @@ x = x.to(device)        # 搬到 mps
 print(x.device)         # mps:0
 y = x.cpu()             # 搬回 CPU（要转 numpy 时必须先回 CPU）
 print(y.device)         # cpu</code></pre>
-  <p><i>Keep in mind that copying large tensors across devices can be expensive in terms of time and memory!</i>（跨设备拷贝大张量的时间和内存开销都不小，别把整个数据集来回搬。）</p>`},
+  <p><i>Keep in mind that copying large tensors across devices can be expensive in terms of time and memory!</i>（跨设备拷贝大张量的时间和内存开销都不小，别把整个数据集来回搬。）</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · .to(device) 到底搬了什么：两套内存世界</summary><div class="ddb">
+  <p class="en">CPU tensors live in system RAM; MPS/GPU tensors live in the accelerator's own memory. <code>.to(device)</code> physically copies the numbers across.</p>
+  <p>把计算机想成两栋楼：CPU 大楼（系统内存 RAM）和加速器大楼（GPU/MPS 有自己的显存）。<code>x = x.to("mps")</code> 的意思是<b>把数字从 CPU 大楼复印一份送进加速器大楼</b>——此后计算发生在加速器楼里，CPU 楼里的原版还在（不再需要时 Python 会回收它）。</p>
+  <p>为什么要搬？因为加速器大楼里的员工<b>只够得着本楼的数据</b>：两个不同楼的张量直接相加会当场报错 <code>Expected all tensors to be on the same device</code>（第 4 章 k5 的习题会故意触发它）。</p>
+  <pre><code>x = torch.ones(3)          # 建在 cpu 楼
+y = x.to("mps")            # 复印到 mps 楼；x 还在 cpu
+print(x.device, y.device)  # cpu  mps:0 —— 两个是独立副本
+x.add_(1)
+print(y)                   # y 不变！.to() 是拷贝不是别名</code></pre>
+  <p class="pit">⚠️ 两个易错点：(1) <code>.to(device)</code> <b>返回新张量</b>，必须写 <code>x = x.to(device)</code> 才生效，只写 <code>x.to(device)</code> 什么都没发生；(2) 转 numpy 必须先 <code>.cpu()</code>，因为 numpy 只住在 CPU 楼。</p>
+  </div></details>`},
  {id:"ch0-k3",t:"两种跑代码的方式 Cloud or local",h:`
   <p><i>You can run this tutorial in a couple of ways: In the cloud (Google Colab)... Locally: set up PyTorch first on your local machine.</i></p>
   <ul><li><b>云：</b>官方教程每页顶部有「Run in Google Colab」，免安装，适合没配好环境时。</li>
@@ -152,7 +185,24 @@ ex:[
   <tr><td>0</td><td>标量 scalar</td><td><code>torch.tensor(3.14)</code></td></tr>
   <tr><td>1</td><td>向量 vector</td><td><code>torch.tensor([1.,2.,3.])</code>（一个样本的特征）</td></tr>
   <tr><td>2</td><td>矩阵 matrix</td><td><code>torch.rand(64, 784)</code>（一批展平的图像）</td></tr>
-  <tr><td>4</td><td>图像批次 batch</td><td><code>[64, 1, 28, 28]</code>（批大小×通道×高×宽）</td></tr></table>`},
+  <tr><td>4</td><td>图像批次 batch</td><td><code>[64, 1, 28, 28]</code>（批大小×通道×高×宽）</td></tr></table>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 维度(rank)怎么一步步升上去：从数字到图像批次</summary><div class="ddb">
+  <p class="en">Each new dimension adds one more index you need to locate a single number inside the tensor.</p>
+  <p>把张量想成<b>套娃的格子柜</b>：每升一维多一层柜门，每层门都要一个下标才能走到最里面的数字。</p>
+  <ul>
+  <li><b>0 维标量</b>：一个格子，直接是数字，没有下标。<code>torch.tensor(3.14)</code></li>
+  <li><b>1 维向量 [3]</b>：一排 3 个格子，用 1 个下标 <code>v[1]</code>。</li>
+  <li><b>2 维矩阵 [3,4]</b>：3 行 4 列的格子纸，用 2 个下标 <code>m[1,2]</code>（第 2 行第 3 列）。</li>
+  <li><b>3 维 [2,3,4]</b>：2 张格子纸叠一摞。<code>t[0,1,2]</code> = 第 1 张纸、第 2 行、第 3 列。</li>
+  <li><b>4 维图像批次 [64,1,28,28]</b>：四层含义按顺序是 <b>第几张图 → 通道 → 第几行 → 第几列</b>。<code>batch[5, 0, 14, 20]</code> = 第 6 张图、第 0 个颜色通道（灰度图只有 1 个通道）、第 15 行、第 21 列那个像素的亮度。</li>
+  </ul>
+  <pre><code>img_batch = torch.rand(64, 1, 28, 28)
+print(img_batch[5, 0, 14, 20])  # 一个标量：某张图某个像素
+print(img_batch[5].shape)       # [1,28,28] 第 6 张图本身
+print(img_batch[5, 0].shape)    # [28,28] 它的像素平面
+print(img_batch.shape)          # 从 shape 反推每层柜子有几个格子</code></pre>
+  <p class="pit">⚠️ "维度"有两个含义别混：<b>rank</b>（有几个下标/几层柜子）和某一维的<b>长度</b>（shape 里那个数字）。[64,1,28,28] 是 4 维(rank=4)张量，其中第 0 维长度是 64。</p>
+  </div></details>`},
  {id:"ch1-k2",t:"创建张量的四种方式 Initializing a Tensor",h:`
   <p>官方给了四种创建方式（<i>The data type is automatically inferred</i>——dtype 会自动推断）：</p>
   <pre><code>import torch, numpy as np
@@ -175,7 +225,26 @@ zeros_tensor = torch.zeros(shape)</code></pre>`},
 print(t.shape)    # torch.Size([3, 4])
 print(t.dtype)    # torch.float32
 print(t.device)   # cpu</code></pre>
-  <p>常见 dtype：<code>float32</code>（默认，深度学习主力）、<code>float64</code>（numpy 默认）、<code>int64</code>（标签 labels）。两个张量运算时 dtype 必须一致，否则报错——<code>float * int</code> 是新手第一大坑。</p>`},
+  <p>常见 dtype：<code>float32</code>（默认，深度学习主力）、<code>float64</code>（numpy 默认）、<code>int64</code>（标签 labels）。普通运算 PyTorch 会自动升格（int 遇 float 变 float），但 <b>in-place</b> 运算和喂给 <code>nn.Linear</code> 等层时 dtype 必须严格匹配——int 张量直接进模型是新手第一大坑。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 为什么 1.0 和 1 不一样：dtype、内存与报错现场</summary><div class="ddb">
+  <p class="en">Every tensor has a dtype — how its numbers are encoded in bytes. Mixing dtypes is allowed with automatic promotion in plain ops, but strict in layers and in-place ops.</p>
+  <p>同样写个"1"，有很多种存法，就像同一个数字可以写在便签（小格子）或 A4 纸（大格子）上：</p>
+  <table><tr><td><code>torch.int64</code></td><td>整数，8 字节，默认整数类型</td><td><code>torch.tensor([1, 2])</code></td></tr>
+  <tr><td><code>torch.float32</code></td><td>小数，4 字节，<b>深度学习默认</b></td><td><code>torch.tensor([1., 2.])</code>（带点！）</td></tr>
+  <tr><td><code>torch.uint8</code></td><td>0–255 的整数，1 字节，原始图像像素</td><td>PIL 图片读进来默认这个</td></tr></table>
+  <p>带小数点的字面量（<code>1.</code>）造出来就是 float32；不带点（<code>1</code>）就是 int64。两者混合时的真实规则：</p>
+  <pre><code>a = torch.tensor([1, 2, 3])        # int64
+b = torch.tensor([0.5, 0.5, 0.5])  # float32
+print((a * b).dtype)               # torch.float32 —— 普通运算自动升格，OK
+try:
+    a.mul_(b)                      # in-place 就不行：往 int64 里塞 0.5
+except RuntimeError as e:
+    print(str(e)[:70])             # result type Float can't be cast to... Long
+print(a.float() + b)               # 显式 .float() 统一，永远安全
+lin = torch.nn.Linear(3, 2)
+lin(a)                             # int 张量直接进模型：expected scalar type Float but found Long</code></pre>
+  <p class="pit">⚠️ 为什么深度学习默认 float32？——显存/内存省一半（对比 float64）、速度快，精度对训练够用。标签却是 int64，因为类别编号是"第几类"不是小数；这个搭配（输入 float32 + 标签 int64）在交叉熵里是官方约定，第 6 章会用到。</p>
+  </div></details>`},
  {id:"ch1-k4",t:"索引与切片 Indexing & slicing（numpy 风格）",h:`
   <p><i>If you're familiar with the NumPy API, you'll find the Tensor API a breeze to use.</i>（会 numpy 就会张量索引。）</p>
   <pre><code>tensor = torch.ones(4, 4)
@@ -194,7 +263,23 @@ print(tensor)
 torch.cat([a, a], dim=0).shape    # [4, 2]  上下接
 torch.cat([a, a], dim=1).shape    # [2, 4]  左右接
 torch.stack([a, a], dim=0).shape  # [2, 2, 2]  套一层"摞起来"</code></pre>
-  <p>记忆：cat 后维度数不变，stack 后维度数 +1。做 Data Loader 碰到 <code>default_collate</code> 内部就是 stack。</p>`},
+  <p>记忆：cat 后维度数不变，stack 后维度数 +1。做 Data Loader 碰到 <code>default_collate</code> 内部就是 stack。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · cat 与 stack 图解：新维度加在哪、元素怎么排</summary><div class="ddb">
+  <p class="en">cat keeps the rank and glues along an existing axis; stack creates a new axis and piles the tensors as slices of it.</p>
+  <p>用"两本书"当例子：书 A、书 B 都是 <b>[2,3]</b>（2 页、每页 3 行）。</p>
+  <ul>
+  <li><code>torch.cat([A, B], dim=0)</code> → <b>[4,3]</b>：把 B 的页<b>续订</b>在 A 后面，还是一本书 4 页。维度数不变。</li>
+  <li><code>torch.cat([A, B], dim=1)</code> → <b>[2,6]</b>：每页左边是 A 的 3 行、右边是 B 的 3 行，像横向拼纸。</li>
+  <li><code>torch.stack([A, B], dim=0)</code> → <b>[2,2,3]</b>：造出一个<b>装书的盒子</b>，新增的第 0 维表示"第几本书"。<code>box[1]</code> 就是书 B。</li>
+  </ul>
+  <pre><code>A = torch.ones(2, 3); B = torch.zeros(2, 3)
+print(torch.cat([A, B], dim=0).shape)    # [4,3] 一本 4 页的书
+print(torch.stack([A, B], dim=0).shape)  # [2,2,3] 盒子里摞 2 本书
+box = torch.stack([A, B], dim=0)
+print(torch.equal(box[0], A), torch.equal(box[1], B))  # True True：box[i] 取回第 i 本
+print(torch.stack([A, B], dim=1).shape)  # 也是 [2,2,3]，但排布不同：box[:, i] 才是第 i 本</code></pre>
+  <p class="pit">⚠️ stack 的 dim 参数指"新维度插在哪个位置"：dim=0 和 dim=1 结果形状一样 [2,2,3] 但<b>排布不同</b>。判断标准：stack 后想用 <code>box[i]</code> 拿回第 i 个原张量，就用 dim=0——DataLoader 打包 batch 正是这么干的（第 2 章详解）。</p>
+  </div></details>`},
  {id:"ch1-k6",t:"算术运算与 in-place Arithmetic & in-place",h:`
   <p>两种乘法必须分清：<code>@</code> 是<b>矩阵乘</b> matrix multiplication，<code>*</code> 是<b>逐元素乘</b> element-wise product：</p>
   <pre><code>y1 = tensor @ tensor.T        # 矩阵乘，.T 是转置 transpose
@@ -206,7 +291,39 @@ agg = tensor.sum()            # 聚合成单元素张量
 agg.item()                    # 单元素张量 -> Python 数值（float）
 tensor.add_(5)                # in-place：原地修改，改变 tensor 本身</code></pre>
   <p><i>Operations that store the result into the operand are called in-place. They are denoted by a _ suffix.</i>（下划线后缀 = 原地操作。）</p>
-  <p><i>In-place operations save some memory, but can be problematic when computing derivatives because of an immediate loss of history. Hence, their use is discouraged.</i>（官方不鼓励 in-place：省一点内存，但会破坏求导需要的历史记录。）</p>`},
+  <p><i>In-place operations save some memory, but can be problematic when computing derivatives because of an immediate loss of history. Hence, their use is discouraged.</i>（官方不鼓励 in-place：省一点内存，但会破坏求导需要的历史记录。）</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 矩阵乘法 @ 到底怎么算：C[i,j] = Σₖ A[i,k]·B[k,j] 逐数字推导</summary><div class="ddb">
+  <p class="en">Matrix multiplication: to get cell (i, j) of the result, walk along row i of A and column j of B, multiplying pair-wise and summing.</p>
+  <p><b>规则（背下来）</b>：结果第 i 行第 j 列 = A 的第 i 行 与 B 的第 j 列 <b>对应相乘再求和</b>。前提：A 的列数 = B 的行数，形状写法 [m,n] @ [n,p] → [m,p]（中间的 n "消耗掉"）。</p>
+  <p>拿 2×2 实例完整算一遍：</p>
+  <pre><code>A = torch.tensor([[1., 2.],
+                  [3., 4.]])
+B = torch.tensor([[5., 6.],
+                  [7., 8.]])
+C = A @ B
+print(C)
+# tensor([[19., 20.],
+#         [43., 44.]])
+# C[0,0] = A 第0行 · B 第0列 = 1*5 + 2*7 = 19
+# C[0,1] = A 第0行 · B 第1列 = 1*6 + 2*8 = 20
+# C[1,0] = A 第1行 · B 第0列 = 3*5 + 4*7 = 43
+# C[1,1] = A 第1行 · B 第1列 = 3*6 + 4*8 = 44</code></pre>
+  <p>逐元素乘 <code>A * B</code> 完全不同——只要求形状相同，对应位置各自相乘：结果是 [[5,12],[21,32]]。神经网络里 <code>nn.Linear</code> 干的就是矩阵乘（第 4 章详解），<code>t @ t.T</code> 常用来算"每行与自己的点积"。</p>
+  <p class="pit">⚠️ 形状检查口诀：<b>相邻相等，中间吃掉</b>。[3,784] @ [784,10] → [3,10]；[3,784] @ [10,784] 直接报错（784≠10）。报错信息 <code>mat1 and mat2 shapes cannot be multiplied</code> 就是在说这件事。</p>
+  </div></details>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 下划线 _ 家族：in-place 为什么省内存却又危险</summary><div class="ddb">
+  <p class="en">In-place ops (trailing underscore) overwrite the tensor's own memory instead of allocating a new tensor — cheaper, but they destroy the history needed for automatic differentiation.</p>
+  <p>普通运算 <code>x = x + 5</code> 会<b>另开一块内存</b>放新结果，旧张量完整保留；in-place 运算 <code>x.add_(5)</code> 则<b>把 5 直接写进 x 自己的内存</b>，旧值永远消失。张量大时省内存，这就是它存在的意义。</p>
+  <pre><code>x = torch.ones(3)
+y = x + 5          # 普通版：y 是新张量，x 仍是 [1,1,1]
+x.add_(5)          # in-place 版：x 自己变成了 [6,6,6]
+print(x)
+# 常见 _ 家族：add_ sub_ mul_ div_ zero_ fill_ copy_ …
+z = torch.zeros(3)
+z.fill_(2.); z.mul_(10); print(z)   # [20., 20., 20.]，链式原地改</code></pre>
+  <p>危险的场景在第 5 章：autograd 要靠"每一步运算的历史"来回溯求导，而 in-place 把中间值覆盖掉了，历史就断了——官方原话 <i>can be problematic when computing derivatives because of an immediate loss of history. Hence, their use is discouraged.</i> 本课规则：<b>前向计算里不用 _，唯一例外是真心想覆盖的场合</b>，比如第 6 章 <code>optimizer.step()</code> 和第 5 章 <code>x.grad.zero_()</code>。</p>
+  <p class="pit">⚠️ 另一个隐藏坑：对<b>视图</b>(view/切片，见 k7) 做 in-place 会连带改原张量，比如 <code>t[0].zero_()</code> 会把 t 的第 0 行清零——这不是 bug，是同一块内存。</p>
+  </div></details>`},
  {id:"ch1-k7",t:"变形与广播 Reshape & broadcasting",h:`
   <p>张量变形三板斧（不复制数据，只换"视角"）：</p>
   <pre><code>t = torch.arange(12)         # [0..11]
@@ -221,7 +338,33 @@ b = torch.tensor([10., 20., 30., 40.])   # (4,)
 (a + b).shape                            # [3, 4]，b 被广播成 3 行
 c = torch.tensor([[1.], [2.], [3.]])     # (3,1)
 (a * c).shape                            # [3, 4]，c 每行乘出 4 份</code></pre>
-  <p>广播让"每个样本减去均值""给每列乘不同权重"这类操作一行搞定，也是最容易出 silent bug 的地方（形状错了但没报错）。动手前先 <code>print(x.shape)</code>。</p>`}],
+  <p>广播让"每个样本减去均值""给每列乘不同权重"这类操作一行搞定，也是最容易出 silent bug 的地方（形状错了但没报错）。动手前先 <code>print(x.shape)</code>。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 广播规则算法：三步对齐，逐步推演</summary><div class="ddb">
+  <p class="en">Broadcasting aligns shapes from the last dimension backwards; a dimension is compatible if sizes are equal, or one of them is 1 (or missing), and size-1 dims are virtually repeated for free.</p>
+  <p>两个形状不同的张量运算前，PyTorch 按固定算法判断兼容性（不真的复制数据）：</p>
+  <ol>
+  <li><b>右对齐</b>：把两个 shape 从最后一维往前逐位比较（短的在前面补 1）。</li>
+  <li><b>逐位判定</b>：每一位"相等"或"其中有 1"→ 兼容；否则直接报错。</li>
+  <li><b>拉伸</b>：为 1 的那一维当作"免费无限复印"参与运算（不占新内存）。</li>
+  </ol>
+  <p>推演三个例子：</p>
+  <pre><code># 例1 (3,4) + (4,)：右对齐 -> (3,4) vs (1,4)
+#   逐位：3 vs 1（有1，拉成3）；4 vs 4（相等）→ 结果 (3,4)
+a = torch.ones(3, 4); b = torch.arange(4.)
+print((a + b).shape)               # [3,4]，每一行都加了 [0,1,2,3]
+
+# 例2 (3,1) + (1,4)：逐位 3vs1→拉成4？注意方向：右对齐后是 1vs4、3vs1
+c = torch.tensor([[1.], [2.], [3.]]); d = torch.tensor([[10., 20., 30., 40.]])
+print((c + d).shape)               # [3,4]：c 每行复印 4 份、d 每行复印 3 份的加法表
+
+# 例3 (3,4) + (3,)：右对齐 (3,4) vs (1,3)
+#   最后一位 4 vs 3 → 既不相等也没有 1 → 报错！
+try:
+    a + torch.ones(3)
+except RuntimeError as e:
+    print(str(e)[:60])             # The size of tensor a (4) must match...</code></pre>
+  <p class="pit">⚠️ 广播最大的风险是<b>不报错的形状错配</b>：你以为在对齐行，实际对齐了列，程序照样跑、数值全错（silent bug）。防御习惯：任何广播运算前 <code>print(a.shape, b.shape)</code>，或在脑内先做右对齐再写代码。</p>
+  </div></details>`}],
 ex:[
  {id:"ch1-e1",q:"从嵌套列表 [[1,2,3],[4,5,6]] 创建张量，打印 shape/dtype/device；再用 zeros_like 创建同形状全 0 张量。Create a tensor from a nested list, print its three attributes, then zeros_like.",a:"<pre><code>import torch\nx = torch.tensor([[1, 2, 3], [4, 5, 6]])\nprint(x.shape, x.dtype, x.device)   # torch.Size([2,3]) torch.int64 cpu\nz = torch.zeros_like(x)\nprint(z)\n# tensor([[0, 0, 0],[0, 0, 0]])</code></pre>"},
  {id:"ch1-e2",q:"用实验证明 cat 和 stack 的区别：对两个 (2,2) 张量分别做 cat(dim=0)、cat(dim=1)、stack(dim=0)，打印形状并解释。Show cat vs stack with shapes.",a:"<pre><code>import torch\na = torch.ones(2, 2)\nprint(torch.cat([a, a], dim=0).shape)    # [4,2] 行数翻倍\nprint(torch.cat([a, a], dim=1).shape)    # [2,4] 列数翻倍\nprint(torch.stack([a, a], dim=0).shape)  # [2,2,2] 多了一维\"摞\"\n# 解释：cat 沿已有维度拼接，维度数不变；stack 新增一维。</code></pre>"},
@@ -245,7 +388,21 @@ training_data = datasets.FashionMNIST(
     transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
 )
 img, label = training_data[0]   # 可以像列表一样下标索引 / index like a list</code></pre>
-  <p>试运行：<code>.venv/bin/python code/02_dataset_dataloader.py</code>（已在本机验证：batch shape [64, 1, 28, 28]）。</p>`},
+  <p>试运行：<code>.venv/bin/python code/02_dataset_dataloader.py</code>（已在本机验证：batch shape [64, 1, 28, 28]）。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 64 张小图怎么变成一个 [64,1,28,28]：collate 的组装流水线</summary><div class="ddb">
+  <p class="en">The DataLoader's default collate function stacks 64 individual (1,28,28) image tensors into one batch tensor along a new leading dimension.</p>
+  <p>一个 batch 的诞生分三步，像流水线装箱：</p>
+  <ol>
+  <li><b>取 64 件货</b>：按 batch_size 从数据集抽 64 次 <code>dataset[i]</code>，得到 64 个 <code>(img, label)</code>，每个 img 是 [1,28,28]（1 通道、28×28 像素）。</li>
+  <li><b>分类堆放</b>：64 张图堆成一摞、64 个标签堆成一摞——默认的 <code>default_collate</code> 内部就是 <code>torch.stack</code>（第 1 章 k5 的 stack！）。</li>
+  <li><b>封箱</b>：得到图像 batch [64,1,28,28] 和标签 batch [64]。</li>
+  </ol>
+  <pre><code>imgs, labels = next(iter(train_dataloader))
+print(imgs.shape, labels.shape)    # [64,1,28,28] [64]
+print(imgs[0].shape)               # [1,28,28] 拆箱：第 0 件货
+print(labels[:8])                  # tensor([9,0,0,3,0,2,7,2]) 服装类别编号</code></pre>
+  <p class="pit">⚠️ 记住方向：<b>DataLoader 永远给你"多一维"的 batch</b>。单个样本是 [1,28,28]，被自动 stack 成 [64,1,28,28]——所以模型里 Flatten 之后是 784 而不是 28。反过来，自己拿一张图推理时模型却在等 batch 维，要手动 <code>x.unsqueeze(0)</code> 补上（第 4 章）。</p>
+  </div></details>`},
  {id:"ch2-k3",t:"自定义 Dataset 三件套 Custom Dataset: __init__ / __len__ / __getitem__",h:`
   <p><i>A custom Dataset class must implement three functions: __init__, __len__, and __getitem__.</i>（自定义数据集的"三件套"，缺一不可。）</p>
   <pre><code>class InMemoryDataset(Dataset):
@@ -257,7 +414,26 @@ img, label = training_data[0]   # 可以像列表一样下标索引 / index like
         return len(self.x)            # 样本总数
     def __getitem__(self, idx):       # 给下标 -> 返回 (特征, 标签) 元组
         return self.x[idx], self.y[idx]</code></pre>
-  <p>官方的图片版 <code>CustomImageDataset</code> 思路完全一样：<code>__getitem__</code> 里 <i>identifies the image's location on disk, converts that to a tensor, retrieves the corresponding label, applies transforms, and returns them in a tuple</i>。记住：<b>Dataset 只回答"idx 是什么"，别的都不管</b>。</p>`},
+  <p>官方的图片版 <code>CustomImageDataset</code> 思路完全一样：<code>__getitem__</code> 里 <i>identifies the image's location on disk, converts that to a tensor, retrieves the corresponding label, applies transforms, and returns them in a tuple</i>。记住：<b>Dataset 只回答"idx 是什么"，别的都不管</b>。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · __len__ 和 __getitem__ 不是魔法：Python 协议（protocol）</summary><div class="ddb">
+  <p class="en">Python calls your methods for you: <code>len(ds)</code> triggers <code>ds.__len__()</code> and <code>ds[i]</code> triggers <code>ds.__getitem__(i)</code>. Implement these two and your object becomes "dataset-shaped".</p>
+  <p>双下划线方法（dunder methods）是 Python 的<b>协议</b>：只要你的类实现了指定名字的方法，内置语法就会自动找到并调用它们。这不是 PyTorch 的发明，是 Python 本身的机制：</p>
+  <pre><code>class Bag:
+    def __init__(self):
+        self.items = ["a", "b", "c"]
+    def __len__(self):
+        return len(self.items)
+    def __getitem__(self, idx):
+        return f"第{idx}件: {self.items[idx]}"
+
+bag = Bag()
+print(len(bag))     # 3   ← Python 偷偷调用了 bag.__len__()
+print(bag[1])       # 第1件: b ← Python 偷偷调用了 bag.__getitem__(1)
+for x in bag:       # 连 for 都行！Python 反复调 bag[0], bag[1]... 直到越界停
+    print(x)</code></pre>
+  <p>所以 <b>DataLoader 的全部要求就是这两招</b>：问 <code>len(ds)</code> 知道总量、问 <code>ds[i]</code> 拿第 i 个样本。它根本不关心数据是张量、图片文件还是 CSV——这正是官方说的 <i>decoupled（解耦）</i>：数据怎么存是 Dataset 的事，怎么打包是 DataLoader 的事，中间只靠这两个方法的"合同"连接。</p>
+  <p class="pit">⚠️ <code>__getitem__</code> 返回什么，DataLoader 就打包什么——惯例是 <code>(特征, 标签)</code> 元组。如果忘了 return 或把顺序写反，错误要到训练循环取 batch 解包时才炸出来，报错位置离案发现场很远，排查很费劲。</p>
+  </div></details>`},
  {id:"ch2-k4",t:"DataLoader：成批、打乱 DataLoader: batching & shuffle",h:`
   <p><i>While training a model, we typically want to pass samples in "minibatches", reshuffle the data at every epoch to reduce model overfitting, and use Python's multiprocessing to speed up data retrieval.</i>（训练要小批量、每轮重洗牌防过拟合、多进程加速读取。DataLoader 一个类全包了。）</p>
   <pre><code>from torch.utils.data import DataLoader
@@ -267,7 +443,17 @@ test_dataloader  = DataLoader(test_data, batch_size=64)
 train_features, train_labels = next(iter(train_dataloader))
 print(train_features.size())   # torch.Size([64, 1, 28, 28])
 print(train_labels.size())     # torch.Size([64])</code></pre>
-  <p>注意 <code>len(dataloader)</code> = 样本数 ÷ batch_size 向上取整：100 个样本、batch_size=33 → 4 个 batch，最后一个只有 1 个样本。<code>shuffle=True</code> 时<i>after we iterate over all batches the data is shuffled</i>——每个 epoch 自动重新洗牌。</p>`},
+  <p>注意 <code>len(dataloader)</code> = 样本数 ÷ batch_size 向上取整：100 个样本、batch_size=33 → 4 个 batch，最后一个只有 1 个样本。<code>shuffle=True</code> 时<i>after we iterate over all batches the data is shuffled</i>——每个 epoch 自动重新洗牌。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · len(dataloader) 的数学：向上取整与最后一队；shuffle 为什么能防过拟合</summary><div class="ddb">
+  <p class="en">len(dataloader) = ceil(n / batch_size); the final batch keeps only the leftover n % batch_size samples (when nonzero).</p>
+  <p><b>数学推导</b>：n 个样本、每批装 b 个，批数 = 装满的批 + 可能的尾巴批。装满的有 ⌊n/b⌋ 个；若除不尽，余下 n mod b 个再补一批，所以总数是<b>向上取整</b>：</p>
+  <pre><code>len(dl) = ⌈n / b⌉ = (n + b - 1) // b      # 整数运算技巧：先加 b-1 再整除
+n=100, b=7  → (100+6)//7 = 15，最后一批 100 % 7 = 2 个样本
+n=100, b=10 → 10 批整除，无尾巴
+n=64,  b=64 → 1 批</code></pre>
+  <p><b>shuffle 为什么重要</b>：如果每轮都按同样顺序喂（比如全是"鞋子"再全是"包"），参数更新会先被一类样本带偏。打乱后每轮的梯度方向带随机噪声，反而帮助跳出局部坑（这是 SGD 的"随机"性，特性不是缺陷）。官方原话：<i>reshuffle the data at every epoch to reduce model overfitting</i>。注意 shuffle=True 时 DataLoader 内部每轮对<b>下标</b>做随机排列，样本本身不变；<b>测试集永远 shuffle=False</b>——评估需要稳定可复现。</p>
+  <p class="pit">⚠️ batch_size 不影响"每个样本每轮被看几次"（恰好一次），它影响<b>每走一步梯度用多少样本平均</b>：越大越稳但越占内存，越小噪声越大。64 是官方教程的常用折中。</p>
+  </div></details>`},
  {id:"ch2-k5",t:"偷懒工具 TensorDataset Sometimes you don't need a class",h:`
   <p>数据已经在内存里（两个张量 x、y）时，官方的 <code>TensorDataset</code> 一行顶替自定义类：</p>
   <pre><code>from torch.utils.data import TensorDataset
@@ -291,7 +477,20 @@ transform = v2.Compose([
     v2.ToImage(),                                # PIL/numpy -> Image 张量
     v2.ToDtype(torch.float32, scale=True),       # 转 float32 并除以 255 缩到 [0., 1.]
 ])</code></pre>
-  <p><i>ToDtype with scale=True casts it to float32 and scales the pixel intensity values to the range [0., 1.]</i>——本机验证：FashionMNIST[0] 的 min/max = 0.0 / 1.0。为什么归一化？数值小而稳定，训练更快更稳。</p>`},
+  <p><i>ToDtype with scale=True casts it to float32 and scales the pixel intensity values to the range [0., 1.]</i>——本机验证：FashionMNIST[0] 的 min/max = 0.0 / 1.0。为什么归一化？数值小而稳定，训练更快更稳。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 像素为什么要除以 255：从 [0,255] 到 [0,1] 再到标准化的两段数学</summary><div class="ddb">
+  <p class="en">Pixels arrive as integers 0–255; dividing by 255 maps them to [0,1]. Standardization then re-centers to mean 0, std 1 for even faster, stabler training.</p>
+  <p><b>第一段：min-max 缩放</b>。图片的原始像素是 8 位整数（uint8），范围 [0,255]。<code>ToDtype(scale=True)</code> 做的变换是一条直线映射：</p>
+  <pre><code>x' = x / 255          # 0 -> 0.0，255 -> 1.0，其余线性分布
+# 反推：x'=0.5 的像素原值 0.5*255 ≈ 128（实测 128/255 = 0.502）</code></pre>
+  <p><b>第二段：标准化 standardize</b>。进一步把分布挪到"中心 0、宽度 1"：</p>
+  <pre><code>z = (x - μ) / σ       # μ=均值，σ=标准差
+# 用 μ=σ=0.5 举例（[0,1] 数据的常用取值）：
+# 0.0 -> (0-0.5)/0.5 = -1     1.0 -> +1     0.5 -> 0
+# 结果范围约 [-1, 1]，中心对称</code></pre>
+  <p><b>为什么要费这两步</b>？神经网络用梯度下降调参数（第 6 章）。如果特征有的在 [0,255]、有的在 [0,1]，损失函数的"山谷"会被拉成又细又长的峡谷：沿陡的方向步子稍大就冲过头，沿缓的方向步子太小挪不动。归一化把山谷修成接近圆形的碗，<b>同一个学习率对每个方向都合适</b>，收敛又快又稳。</p>
+  <p class="pit">⚠️ 考试常考的区分：min-max（除 255）把范围压进 [0,1]；标准化（减均值除标准差）把分布变成 μ=0、σ=1。<code>ToDtype(scale=True)</code> 只做第一段，完整预处理常见两者串联。另外别对<b>标签</b>做归一化——类别编号是离散的，归一化毫无意义。</p>
+  </div></details>`},
  {id:"ch3-k3",t:"Lambda 与 one-hot：标签变换 Target transforms",h:`
   <p>标签是整数 0-9，但有时需要 one-hot 向量（只有一个 1，其余全 0）。官方用 <code>v2.Lambda</code> 包任意函数：</p>
   <pre><code>import torch.nn.functional as F
@@ -299,7 +498,18 @@ target_transform = v2.Lambda(
     lambda y: F.one_hot(torch.tensor(y), num_classes=10).float()
 )
 # label 3 -> [0,0,0,1,0,0,0,0,0,0]</code></pre>
-  <p>不用 torchvision 时，任何 Python 函数都能当 transform：<code>transform=lambda t: (t - t.mean()) / t.std()</code>。多个变换用 <code>v2.Compose([...])</code> 按顺序串联（流水线 pipeline）。</p>`}],
+  <p>不用 torchvision 时，任何 Python 函数都能当 transform：<code>transform=lambda t: (t - t.mean()) / t.std()</code>。多个变换用 <code>v2.Compose([...])</code> 按顺序串联（流水线 pipeline）。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · one-hot 编码：为什么"类别 3"不能直接当数字 3 用</summary><div class="ddb">
+  <p class="en">One-hot encodes a category as a vector with a single 1 at the class index; it removes any fake "ordering" between classes.</p>
+  <p>问题所在：如果直接把 T-shirt=0、Trouser=1、…、Ankle boot=9 当数字喂给某些损失函数，模型会"以为"9 比 3 大、Ankle boot 比 T-shirt"多 9 倍"——类别之间根本没有这种<b>顺序和距离</b>（那是人为编号，不是真实数量）。one-hot 用"每个类别占一个开关位"消除假秩序：</p>
+  <pre><code>import torch, torch.nn.functional as F
+one_hot = F.one_hot(torch.tensor(3), num_classes=10).float()
+print(one_hot)   # tensor([0., 0., 0., 1., 0., 0., 0., 0., 0., 0.])
+# 数学形式：onehot(y) = e_y，只有第 y 位是 1、其余全 0 的单位向量
+# 标签 3 和标签 9 的 one-hot"距离"一样远（都只差 2 位），编号消失了</code></pre>
+  <p>什么时候需要 one-hot？——当损失/模型需要<b>向量形式</b>的标签时（比如自己实现分类的均方误差损失）。而第 6 章的 <code>nn.CrossEntropyLoss</code> <b>不需要</b>：它直接吃整数类别编号（内部自动做等价处理）。所以官方教程里的 <code>target_transform</code> 只是演示"怎么自定义标签变换"，实际训练保持整数标签即可。</p>
+  <p class="pit">⚠️ 别混淆：one-hot 是给"标签"的变换；第 4 章模型输出的 10 维向量（logits）是"预测"。两者形状相同（都是 [N,10]）但来源不同——预测是算出来的连续分数，one-hot 是人为设定的 0/1。</p>
+  </div></details>`}],
 ex:[
  {id:"ch3-e1",q:"手写归一化 transform：把张量按 (x-mean)/std 变换，对 [[0,1],[0.25,0.75]] 与 mean=std=0.5 计算。Write a normalize transform.",a:"<pre><code>import torch\nmean, std = torch.tensor([0.5, 0.5]), torch.tensor([0.5, 0.5])\nnormalize = lambda x: (x - mean) / std\nx = torch.tensor([[0.0, 1.0], [0.25, 0.75]])\nprint(normalize(x))\n# [[-1., 1.], [-0.5, 0.5]]</code></pre>"},
  {id:"ch3-e2",q:"写一个 target_transform：整数标签 -> one-hot 张量（5 类）。验证 label 2 的输出。One-hot label transform.",a:"<pre><code>import torch, torch.nn.functional as F\nonehot = lambda y: F.one_hot(torch.tensor(y), num_classes=5).float()\nprint(onehot(2))   # tensor([0., 0., 1., 0., 0.])</code></pre>"},
@@ -320,7 +530,25 @@ ex:[
         )
     def forward(self, x):
         x = self.flatten(x)
-        return self.linear_relu_stack(x)</code></pre>`},
+        return self.linear_relu_stack(x)</code></pre>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · super().__init__() 在干嘛：nn.Module 的"登记处"机制</summary><div class="ddb">
+  <p class="en"><code>super().__init__()</code> initializes nn.Module's internal bookkeeping; every submodule you assign afterwards gets registered — that's how <code>parameters()</code> knows what to collect.</p>
+  <p>把 <code>nn.Module</code> 想成<b>带登记处的物业</b>：<code>super().__init__()</code> 是"先开门营业"（初始化内部的参数登记表）；之后你在 <code>__init__</code> 里写的每一句 <code>self.xxx = nn.某层(...)</code> 都会被物业<b>自动登记</b>（层叫什么、里面有哪些参数）。正因为有登记，<code>model.parameters()</code>、<code>model.to(device)</code>、<code>model.state_dict()</code>（第 7 章）才能"一键扫全楼"。</p>
+  <pre><code>import torch.nn as nn
+class Net(nn.Module):
+    def __init__(self):
+        # super().__init__()   # 故意注释掉，看看会怎样
+        self.l = nn.Linear(4, 2)
+Net()   # AttributeError！物业还没开门，没法登记
+# 报错：cannot assign module before Module.__init__() call</code></pre>
+  <p>三条由此而来的纪律：</p>
+  <ul>
+  <li><code>super().__init__()</code> 必须是 <code>__init__</code> 第一句（先开门再登记）。</li>
+  <li>层要挂在 <code>self</code> 上才算登记——写在局部变量里（<code>lin = nn.Linear(...)</code> 不带 self.）的层<b>参数会失踪</b>，优化器永远收不到它们，训练等于白训。</li>
+  <li>普通 Python 列表/字典里的层不被登记，要用 <code>nn.ModuleList</code>/<code>nn.ModuleDict</code>（本课用 Sequential，暂不涉及）。</li>
+  </ul>
+  <p class="pit">⚠️ forward 里不需要 super——登记只在 <code>__init__</code> 阶段做；<code>forward</code> 是普通方法，只负责定义"数据怎么流过登记好的层"。</p>
+  </div></details>`},
  {id:"ch4-k2",t:"model(x)，不要 model.forward(x) Call the model, not forward",h:`
   <p><i>To use the model, we pass it the input data. This executes the model's forward, along with some background operations. Do not call model.forward() directly!</i>（直接调 <code>model(x)</code>——它会连带执行钩子等后台机制；官方原文加粗警告不要直接调 forward。）</p>
   <pre><code>X = torch.rand(1, 28, 28)
@@ -328,7 +556,25 @@ logits = model(X)                       # [1, 10] 每类一个"原始分数"
 pred_probab = nn.Softmax(dim=1)(logits) # 概率，dim=1 上和为 1
 y_pred = pred_probab.argmax(1)          # 概率最大的类
 print(y_pred)                           # tensor([6])</code></pre>
-  <p><i>We get the prediction probabilities by passing it through an instance of the nn.Softmax module</i>——logits 是 <i>raw values in [-infty, infty]</i>，Softmax 把它们压成 [0,1] 概率。</p>`},
+  <p><i>We get the prediction probabilities by passing it through an instance of the nn.Softmax module</i>——logits 是 <i>raw values in [-infty, infty]</i>，Softmax 把它们压成 [0,1] 概率。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · Softmax 数学：三步把原始分数变成概率</summary><div class="ddb">
+  <p class="en">Softmax turns raw scores (logits) into probabilities: exponentiate each score, then divide by the sum so everything adds to 1.</p>
+  <p>模型最后一层输出若干个数（logits），可正可负，比如 <code>[2.0, 1.0, 0.1]</code>（3 类简化版）。Softmax 三步：</p>
+  <ol>
+  <li><b>取指数</b> e^z：把任意数变正数，且"大的更大"（放大差距）。2.0→7.39，1.0→2.72，0.1→1.11。</li>
+  <li><b>求和</b>：7.39 + 2.72 + 1.11 = 11.22。</li>
+  <li><b>归一</b>：每个除以总和 → [0.659, 0.242, 0.099]，和恰好为 1，成为合法概率。</li>
+  </ol>
+  <pre><code>import torch, torch.nn as nn
+logits = torch.tensor([2.0, 1.0, 0.1])
+prob = nn.Softmax(dim=0)(logits)
+print(prob)                       # tensor([0.659, 0.242, 0.099])
+print(prob.sum())                 # 1.0 —— 必然如此，数学保证
+print(torch.exp(logits) / torch.exp(logits).sum())  # 手工复现，一模一样
+print(prob.argmax())              # 0 —— 概率最大的下标 = 预测类别</code></pre>
+  <p>两个性质值得记住：(1) <b>保序</b>——softmax 不改变大小顺序，所以 logits 和概率的 argmax 永远一致，"谁最像"看 logits 就能定；(2) <b>平移不变</b>——所有 logits 同时加常数结果不变（指数里约掉了），所以只有相对大小有意义。</p>
+  <p class="pit">⚠️ 那 Softmax 有什么用？——人类可读的概率和损失计算。但训练时<b>不要手动加 Softmax 再喂 CrossEntropyLoss</b>：它内部自带等价计算，加了反而错（双重 softmax，梯度变小）。Softmax 只在你"想看概率"时手动使用。</p>
+  </div></details>`},
  {id:"ch4-k3",t:"逐层拆解 Layers: Flatten / Linear / ReLU",h:`
   <p>拿一批 3 张图 <code>torch.rand(3,28,28)</code> 逐层观察形状变化：</p>
   <table><tr><th>层</th><th>作用（官方原文要点）</th><th>形状</th></tr>
@@ -336,7 +582,51 @@ print(y_pred)                           # tensor([6])</code></pre>
   <tr><td><code>nn.Linear(784,20)</code></td><td><i>applies a linear transformation on the input using its stored weights and biases</i>（y = Wx + b）</td><td>[3,784] → [3,20]</td></tr>
   <tr><td><code>nn.ReLU()</code></td><td><i>Non-linear activations are what create the complex mappings between the model's inputs and outputs</i>（负数归零，引入非线性）</td><td>[3,20]，负值变 0</td></tr>
   <tr><td><code>nn.Sequential</code></td><td><i>an ordered container of modules... data is passed through all the modules in the same order as defined</i>（按顺序串起来的容器）</td><td>整条流水线</td></tr></table>
-  <p>为什么必须有激活函数？没有 ReLU 时，多层线性叠加 <i>W2(W1x+b1)+b2 = (W2W1)x + (W2b1+b2)</i> 仍是一层线性映射，再深的网络也只能画直线（code/04 里有实验：合并后最大差异 0.0）。</p>`},
+  <p>为什么必须有激活函数？没有 ReLU 时，多层线性叠加 <i>W2(W1x+b1)+b2 = (W2W1)x + (W2b1+b2)</i> 仍是一层线性映射，再深的网络也只能画直线（code/04 里有实验：合并后最大差异 0.0）。</p>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · Linear 层完整推导：y = Wx + b 逐数字算一遍 + 参数量公式</summary><div class="ddb">
+  <p class="en">nn.Linear(in, out) stores a weight matrix [out, in] and a bias [out]; it computes y = x @ W.T + b, i.e. each output is a weighted sum of all inputs.</p>
+  <p><b>最小实例手算</b>：输入 2 维 → 输出 3 维。</p>
+  <pre><code>layer = nn.Linear(2, 3)
+# W 是 [3,2]（out,in），b 是 [3]，随机初始化
+# 假设 W = [[1,2],[3,4],[5,6]]，b = [0.1,0.1,0.1]，x = [1,2]：
+# y[0] = 1*1 + 2*2 + 0.1 = 5.1
+# y[1] = 1*3 + 2*4 + 0.1 = 11.1
+# y[2] = 1*5 + 2*6 + 0.1 = 17.1
+x = torch.tensor([1., 2.])
+print(layer(x).shape)                         # [3]
+print(layer.weight.shape, layer.bias.shape)   # [3,2] [3]</code></pre>
+  <p>直观理解：<b>输出的每一维都是"全部输入的加权投票"</b>——W 的一行就是一组权重（一位"评委"），b 是这位评委的预设倾向。784 个像素 → 10 个类别，就是 10 位评委每人读 784 个像素打分。</p>
+  <p><b>参数量公式（必背）</b>：Linear(in, out) = in×out 个权重 + out 个偏置，即 <code>a*b + b</code>。官方 669,706 的账本：</p>
+  <pre><code>784*512 + 512   = 401,920   # 第 1 层
+512*512 + 512   = 262,656   # 第 2 层
+512*10  + 10    =   5,130   # 第 3 层
+合计             = 669,706   # 与 code/04 实测一致</code></pre>
+  <p class="pit">⚠️ 注意 weight 形状是 <b>[out_features, in_features]</b>（行=评委、列=输入），所以前向是 <code>x @ W.T + b</code> 而不是 x @ W——PyTorch 这么存是为了内存布局更高效。手写自定义层时容易在这里翻车。</p>
+  </div></details>
+  <details class="dd"><summary>🔍 疑难详解 Deep dive · 为什么必须有非线性：代数证明"多层线性 ≡ 一层"</summary><div class="ddb">
+  <p class="en">Two linear layers without activation collapse into one: W2(W1x+b1)+b2 = (W2W1)x + (W2b1+b2). Non-linearities are what stop depth from being pointless.</p>
+  <p>设第一层是 y1 = W1x + b1，第二层是 y2 = W2y1 + b2。把 y1 代进 y2，用<b>分配律</b>一步步展开：</p>
+  <pre><code>y2 = W2(W1x + b1) + b2
+   = W2·W1·x + W2·b1 + b2        # W2 分别乘进括号两项
+   = (W2@W1)·x + (W2@b1 + b2)    # 令 W' = W2@W1，b' = W2@b1 + b2
+   = W'x + b'                    # 看！整体就是一个新的单层 Linear</code></pre>
+  <p>也就是说：不管叠 2 层还是 100 层<b>纯线性</b>层，整体永远等价于一个单层——深度毫无意义，而且模型只能学"直线型"映射。ReLU 的使命就是打破这个坍缩：</p>
+  <pre><code>import torch, torch.nn as nn
+lin1, lin2 = nn.Linear(6, 8), nn.Linear(8, 4)
+x = torch.randn(3, 6)
+merged = nn.Linear(6, 4)
+with torch.no_grad():                      # 按上面的公式合并权重（习题 e3）
+    merged.weight.copy_(lin2.weight @ lin1.weight)
+    merged.bias.copy_(lin2.bias + lin2.weight @ lin1.bias)
+print((lin2(lin1(x)) - merged(x)).abs().max().item())   # ≈1e-7 → 坍缩实锤
+
+relu = nn.ReLU()
+stacked = lin2(relu(lin1(x)))              # 中间加 ReLU
+# relu(W1x+b1) 无法写成任何 W'x+b'（负数被砍成 0，产生"弯折"）
+# 现在 stacked 复刻不了 → 深度开始有意义</code></pre>
+  <p>ReLU 只有 "<code>max(0, x)</code>" 一行：正数放行、负数归零。无数个这样的"折弯"拼起来，网络才能拟合任意复杂的曲线——这就是官方说的 <i>non-linear activations create the complex mappings between inputs and outputs</i>。</p>
+  <p class="pit">⚠️ 常见问题：ReLU 放在 Linear <b>之间</b>，不在最后一层之后（最后输出 logits 给损失函数用）；Sequential 里顺序写错（Linear→Linear→ReLU）效果大打折扣。</p>
+  </div></details>`},
  {id:"ch4-k4",t:"参数：模型里有什么可学 Model Parameters",h:`
   <p><i>Many layers inside a neural network are parameterized, i.e. have associated weights and biases that are optimized during training. Subclassing nn.Module automatically tracks all fields defined inside your model object, and makes all parameters accessible using your model's parameters() or named_parameters() methods.</i>（nn.Module 自动登记所有子模块的参数，训练时就优化它们。）</p>
   <pre><code>for name, param in model.named_parameters():
